@@ -1,0 +1,134 @@
+tvctrl – v2 Improvements Summary
+================================
+
+1. Graceful HTTP Server Lifecycle (Channel-based)
+-------------------------------------------------
+- Replaced infinite blocking (`select {}` / dummy channel) with a proper shutdown channel.
+- HTTP server now accepts a `stop <-chan struct{}` and shuts down cleanly on Ctrl+C.
+- Main command listens for OS interrupt and closes `stop` to terminate server.
+- Server only blocks when actually serving media (scan / probe-only exit immediately).
+
+Key outcome:
+- No zombie process
+- Clean Ctrl+C behavior
+- Clear ownership of server lifecycle
+
+
+2. Explicit Cache Selection (--select-cache)
+--------------------------------------------
+- Added `--select-cache <index>` flag.
+- Cache entries are:
+  - Sorted deterministically
+  - Indexed numerically
+  - Displayed with index in `--list-cache`
+
+- Selecting a cache entry:
+  - Loads Vendor + ControlURL directly
+  - Injects `_CachedControlURL`
+  - Skips SSDP, tryCache, probing, and mode dispatch
+  - Runs playback immediately
+
+Key outcome:
+- Deterministic target selection
+- No prompts
+- No guessing
+- No side effects
+
+
+3. Cache Flow Clarification (tryCache vs select-cache)
+------------------------------------------------------
+- `tryCache`:
+  - Implicit
+  - IP-based
+  - Interactive
+  - Used only as fallback in auto mode
+
+- `--select-cache`:
+  - Explicit
+  - Index-based
+  - Non-interactive
+  - Absolute override
+
+These two paths coexist by design and do NOT replace each other.
+
+
+4. Centralized Execution Override (RunScript)
+---------------------------------------------
+- `RunScript` now short-circuits execution if `SelectCache != -1`.
+
+Example logic:
+- If user explicitly selected cache → runWithConfig → return
+- Otherwise → normal mode dispatch (scan / manual / auto)
+
+Key outcome:
+- No config mutation hacks
+- No forced mode switching
+- Single authoritative execution gate
+
+
+5. Cache Write Guard During Cache Selection
+-------------------------------------------
+- Cache writes are disabled when `--select-cache` is used.
+- Prevents re-writing or mutating the selected cache entry during playback.
+
+Condition:
+- `storeInCache` returns early if `SelectCache != -1`
+
+
+6. Cache Enhancements
+---------------------
+- Cache supports multiple devices (keyed by IP).
+- Devices are sorted when listed and when indexed.
+- Added numeric index display for user selection.
+- Added helper functions:
+  - sortedCache()
+  - selectFromCache(index)
+
+Key outcome:
+- Multi-device cache is now first-class
+- Enables future interactive selection UI
+
+
+7. New / Updated Flags
+----------------------
+- --select-cache <index>   → Select cached device by index
+- --no-cache               → Disable cache usage (flag inversion handled explicitly)
+- --auto-cache             → Skip save confirmation
+- --list-cache             → Show cached devices with index
+- --forget-cache           → Remove cache entries
+- --deep-search            → Expanded probe paths
+- --ssdp                   → Enable SSDP discovery
+
+
+8. CLI Autocomplete (Optional UX Helper)
+----------------------------------------
+- Enabled Cobra completion command.
+- Added helper command:
+  - `tvctrl install-completion`
+- Generates shell-specific completion scripts (bash / zsh / fish).
+
+Key outcome:
+- One-time setup
+- No manual completion generation every run
+
+
+9. Behavior Improvements Summary
+--------------------------------
+- Explicit intent > inferred behavior
+- Deterministic execution paths
+- Reduced hidden side effects
+- Cleaner shutdown logic
+- Cache is now selectable, indexable, and extensible
+
+
+REMINDERS (all applied)
+========================================
+
+[ ] Do NOT allow cache writes when using --select-cache
+[ ] Keep `runWithConfig` relying on `_CachedControlURL`
+[ ] Do NOT merge select-cache into tryCache
+[ ] Avoid mutating Mode / TIP / TPath to influence control flow
+[ ] Any new execution path must respect SelectCache override
+[ ] If adding interactive cache selection, reuse sortedCache()
+
+END
