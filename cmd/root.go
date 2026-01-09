@@ -55,7 +55,7 @@ func init() {
 	initHelpTemplate()
 
 	// ---- execution flags ----
-	rootCmd.Flags().BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only")
+	rootCmd.Flags().BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only when using mode: auto")
 	rootCmd.Flags().StringVar(&cfg.Mode, "mode", cfg.Mode, "Execution mode (auto/manual/scan)")
 
 	// ---- cache flags ----
@@ -66,6 +66,7 @@ func init() {
 
 	// ---- scan flags ----
 	rootCmd.Flags().StringVar(&cfg.Subnet, "subnet", cfg.Subnet, "Subnet to scan (e.g. 192.168.1.0/24)")
+	rootCmd.Flags().BoolVar(&cfg.DeepSearch, "deep-search", cfg.DeepSearch, "Use a bigger list when probing for device enpoints (Method:slower and more noisy)")
 	rootCmd.Flags().BoolVar(&cfg.Discover, "ssdp", cfg.Discover, "Enable SSDP discovery")
 
 	// ---- TV flags ----
@@ -98,6 +99,7 @@ Cache:
   --forget-cache      Forget cache (interactive | IP | all)
 
 Scan:
+  --deep-search		  Use a bigger list when probing for device enpoints (Method:slower and more noisy) 
   --subnet string     Subnet to scan (e.g. 192.168.1.0/24)
   --ssdp              Enable SSDP discovery
 

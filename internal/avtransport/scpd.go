@@ -34,9 +34,18 @@ func FetchActions(scpdURL string) (map[string]bool, error) {
 }
 
 var safeActions = []string{
+	// --- Status / state ---
 	"GetTransportInfo",
 	"GetPositionInfo",
+	"GetMediaInfo",
+	"GetDeviceCapabilities",
+
+	// --- Settings (read-only) ---
+	"GetTransportSettings",
+
+	// --- Control (reversible / safe) ---
 	"Stop",
+	"Pause",
 }
 
 func ValidateActions(target Target) map[string]bool {

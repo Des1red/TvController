@@ -14,18 +14,54 @@ var probePorts = []string{
 	"8080",
 }
 
-var probePaths = []string{
+var defaultList = []string{
 	"/dmr/upnp/control/AVTransport1",
 	"/upnp/control/AVTransport",
 	"/MediaRenderer/AVTransport/Control",
 	"/AVTransport/control",
 }
 
-func Probe(ip string, timeout time.Duration) (*Target, error) {
+var bigList = []string{
+	// --- Common / standard ---
+	"/upnp/control/AVTransport",
+	"/AVTransport/control",
+	"/MediaRenderer/AVTransport/Control",
+	"/dmr/upnp/control/AVTransport1",
+
+	// --- Samsung ---
+	"/smp_7_/AVTransport",
+	"/smp_9_/AVTransport",
+	"/upnp/control/AVTransport1",
+
+	// --- Sony / Bravia ---
+	"/sony/AVTransport",
+	"/upnp/control/AVTransport/1",
+
+	// --- LG webOS ---
+	"/upnp/control/AVTransport",
+	"/upnp/control/avtransport",
+
+	// --- Generic DMR variants ---
+	"/renderer/control/AVTransport",
+	"/device/AVTransport/control",
+	"/control/AVTransport",
+
+	// --- Case / path quirks ---
+	"/AVTransport/Control",
+	"/avtransport/control",
+}
+
+func Probe(ip string, timeout time.Duration, list bool) (*Target, error) {
+	var endpoints []string
+	if list {
+		endpoints = bigList
+	} else {
+		endpoints = defaultList
+	}
 	deadline := time.Now().Add(timeout)
 
 	for _, port := range probePorts {
-		for _, path := range probePaths {
+		for _, path := range endpoints {
 			if time.Now().After(deadline) {
 				return nil, errors.New("AVTransport probe timed out")
 			}

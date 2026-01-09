@@ -10,7 +10,8 @@ type Config struct {
 	ForgetCache string // "", "all", or IP
 	ListCache   bool
 
-	Subnet string
+	DeepSearch bool
+	Subnet     string
 
 	TIP      string // TV IP
 	TPort    string // TV SOAP port

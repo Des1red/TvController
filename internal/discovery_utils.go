@@ -100,10 +100,12 @@ func probeAVTransport(cfg *Config) (bool, error) {
 
 	logger.Notify("Probing AVTransport directly : %s", cfg.TIP)
 
-	target, err := avtransport.Probe(cfg.TIP, 8*time.Second)
+	target, err := avtransport.Probe(cfg.TIP, 8*time.Second, cfg.DeepSearch)
 	if err != nil {
 		return false, err
 	}
+
+	observedActions := avtransport.ValidateActions(*target)
 
 	// update cfg so playback can continue
 	cfg._CachedControlURL = target.ControlURL
@@ -130,6 +132,14 @@ func probeAVTransport(cfg *Config) (bool, error) {
 		}
 		if dev.Vendor == "" {
 			dev.Vendor = cfg.TVVendor
+		}
+		if len(observedActions) > 0 {
+			if dev.Actions == nil {
+				dev.Actions = map[string]bool{}
+			}
+			for k, v := range observedActions {
+				dev.Actions[k] = v
+			}
 		}
 
 		store[cfg.TIP] = dev

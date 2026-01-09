@@ -14,10 +14,21 @@ type SSDPDevice struct {
 }
 
 var ssdpSearches = []string{
+	// --- Core ---
 	"urn:schemas-upnp-org:device:MediaRenderer:1",
+	"urn:schemas-upnp-org:device:MediaRenderer:2",
+
+	// --- Services ---
 	"urn:schemas-upnp-org:service:AVTransport:1",
-	"ssdp:all",
+	"urn:schemas-upnp-org:service:RenderingControl:1",
+	"urn:schemas-upnp-org:service:ConnectionManager:1",
+
+	// --- Smart TV ecosystems ---
 	"urn:dial-multiscreen-org:service:dial:1",
+	"urn:schemas-upnp-org:device:MediaServer:1",
+
+	// --- Broad fallback ---
+	"ssdp:all",
 }
 
 func ListenNotify(timeout time.Duration) ([]SSDPDevice, error) {
@@ -145,7 +156,7 @@ func parseSSDP(resp string) SSDPDevice {
 			d.USN = strings.TrimSpace(l[4:])
 		}
 	}
-	logger.Info("Parsed SSDP headers: LOCATION=%s SERVER=%s USN=%s",
+	logger.Result("Parsed SSDP headers: LOCATION=%s SERVER=%s USN=%s",
 		d.Location, d.Server, d.USN)
 
 	return d
