@@ -2,13 +2,14 @@ package internal
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"tvctrl/internal/cache"
 	"tvctrl/logger"
 )
 
 func storeInCache(cfg *Config, update cache.Device) {
-	if !cfg.UseCache {
+	if !cfg.UseCache || cfg.SelectCache != -1 {
 		return
 	}
 	store, _ := cache.Load()
@@ -20,6 +21,10 @@ func storeInCache(cfg *Config, update cache.Device) {
 		if !confirm("Store this AVTransport endpoint in cache?") {
 			return
 		}
+	} else {
+		logger.Notify("=============== CACHE ===============")
+		logger.Notify("%s already stored in cache", dev.ControlURL)
+		logger.Notify("=============== CACHE ===============")
 	}
 
 	// --- merge ControlURL ---
@@ -54,6 +59,44 @@ func storeInCache(cfg *Config, update cache.Device) {
 
 	store[cfg.TIP] = dev
 	_ = cache.Save(store)
+}
+
+func LoadCachedTV(cfg *Config) {
+	ip, dev, ok := selectFromCache(cfg.SelectCache)
+	if !ok {
+		logger.Fatal("Invalid cache index: %d", cfg.SelectCache)
+	}
+
+	cfg.TIP = ip
+	cfg.TVVendor = dev.Vendor
+	cfg._CachedControlURL = dev.ControlURL
+
+	logger.Success(
+		"Using cached device [%d]: %s",
+		cfg.SelectCache,
+		dev.ControlURL,
+	)
+}
+
+func selectFromCache(index int) (string, cache.Device, bool) {
+	store, _ := cache.Load()
+	keys := sortedCache(store)
+
+	if index < 0 || index >= len(keys) {
+		return "", cache.Device{}, false
+	}
+
+	ip := keys[index]
+	return ip, store[ip], true
+}
+
+func sortedCache(store cache.Store) []string {
+	keys := make([]string, 0, len(store))
+	for ip := range store {
+		keys = append(keys, ip)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func HandleCacheCommands(cfg Config) bool {
@@ -146,7 +189,11 @@ func handleListCache() {
 	fmt.Printf(" %-15s %-10s %s\n", "IP", "Vendor", "ControlURL")
 	fmt.Println(strings.Repeat("-", 60))
 
-	for ip, dev := range store {
-		fmt.Printf(" %-15s %-10s %s\n", ip, dev.Vendor, dev.ControlURL)
+	keys := sortedCache(store)
+
+	for i, ip := range keys {
+		dev := store[ip]
+		fmt.Printf("[%d] %-15s %-10s %s\n", i, ip, dev.Vendor, dev.ControlURL)
 	}
+
 }

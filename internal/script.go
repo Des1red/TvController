@@ -9,21 +9,8 @@ import (
 	"tvctrl/logger"
 )
 
-func RunScript(cfg Config) {
-	mode := strings.ToLower(cfg.Mode)
-	switch mode {
-	case "scan":
-		scan(cfg)
-	case "manual":
-		runManual(cfg)
-	case "auto":
-		runAuto(cfg)
-	default:
-		log.Fatalf("Unknown mode: %s", cfg.Mode)
-	}
-}
-
 func runWithConfig(cfg Config) {
+
 	controlURL := cfg.ControlURL()
 
 	if cfg._CachedControlURL != "" {
@@ -39,37 +26,23 @@ func runWithConfig(cfg Config) {
 	avtransport.Run(target, meta)
 }
 
-func runManual(cfg Config) {
-	target := avtransport.Target{
-		ControlURL: cfg.ControlURL(),
-		MediaURL:   cfg.MediaURL(),
-	}
-
-	meta := avtransport.MetadataForVendor(cfg.TVVendor, target)
-	avtransport.Run(target, meta)
-}
-
-func scan(cfg Config) {
-	// --- SSDP-only scan ---
-	if cfg.Discover {
-		if trySSDP(&cfg) {
-			logger.Success("Device discovered via SSDP")
-		} else {
-			logger.Notify("No devices discovered via SSDP")
-		}
+func RunScript(cfg Config) {
+	if cfg.SelectCache != -1 {
+		logger.Notify("Using explicitly selected cached device")
+		runWithConfig(cfg)
 		return
 	}
-
-	// --- Subnet scan ---
-	if cfg.Subnet != "" {
-		scanSubnet(cfg)
-		return
+	mode := strings.ToLower(cfg.Mode)
+	switch mode {
+	case "scan":
+		runScan(cfg)
+	case "manual":
+		runManual(cfg)
+	case "auto":
+		runAuto(cfg)
+	default:
+		log.Fatalf("Unknown mode: %s", cfg.Mode)
 	}
-
-	// --- Single-IP probe ---
-	tryProbe(cfg, false)
-
-	logger.Success("Mode : Scan , completed")
 }
 
 func runAuto(cfg Config) {
@@ -92,6 +65,39 @@ func runAuto(cfg Config) {
 	if err {
 		logger.Fatal("Unable to resolve AVTransport endpoint")
 	}
+}
+
+func runManual(cfg Config) {
+	target := avtransport.Target{
+		ControlURL: cfg.ControlURL(),
+		MediaURL:   cfg.MediaURL(),
+	}
+
+	meta := avtransport.MetadataForVendor(cfg.TVVendor, target)
+	avtransport.Run(target, meta)
+}
+
+func runScan(cfg Config) {
+	// --- SSDP-only scan ---
+	if cfg.Discover {
+		if trySSDP(&cfg) {
+			logger.Success("Device discovered via SSDP")
+		} else {
+			logger.Notify("No devices discovered via SSDP")
+		}
+		return
+	}
+
+	// --- Subnet scan ---
+	if cfg.Subnet != "" {
+		scanSubnet(cfg)
+		return
+	}
+
+	// --- Single-IP probe ---
+	tryProbe(cfg, false)
+
+	logger.Success("Mode : Scan , completed")
 }
 
 func tryProbe(cfg Config, doPlayback bool) bool {
@@ -154,7 +160,7 @@ func tryCache(cfg *Config) bool {
 	cfg.TIP = ""
 
 	// Inject directly into playback phase
-	cfg._CachedControlURL = dev.ControlURL // see next fix
+	cfg._CachedControlURL = dev.ControlURL
 
 	return true
 }

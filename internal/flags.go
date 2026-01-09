@@ -5,6 +5,7 @@ type Config struct {
 	ProbeOnly bool
 	Discover  bool
 
+	SelectCache int
 	AutoCache   bool
 	UseCache    bool
 	ForgetCache string // "", "all", or IP
@@ -24,14 +25,16 @@ type Config struct {
 	ServePort string // local HTTP port
 
 	_CachedControlURL string
+	ServerUp          bool
 }
 
 var DefaultConfig = Config{
-	AutoCache: false,
-	UseCache:  true,
-	ProbeOnly: false,
-	Discover:  false,
-	Mode:      "auto",
-	ServePort: "8000",
-	LDir:      "./directory",
+	SelectCache: -1,
+	AutoCache:   false,
+	UseCache:    true,
+	ProbeOnly:   false,
+	Discover:    false,
+	Mode:        "auto",
+	ServePort:   "8000",
+	LDir:        "./directory",
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"os/signal"
 	"time"
 
 	"tvctrl/internal"
@@ -16,13 +17,18 @@ var rootCmd = &cobra.Command{
 	Use:   "tvctrl",
 	Short: "Simple TV controller using AVTransport",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		stop := make(chan struct{})
 		//FLAG INVERSION HERE
 		cfg.UseCache = !noCache
 		// Cache commands exit early
 		if internal.HandleCacheCommands(cfg) {
 			os.Exit(0)
 		}
+		if cfg.SelectCache >= 0 {
+			internal.LoadCachedTV(&cfg)
+		}
+
+		serverRunning := false
 
 		// ---- PRE-RUN LOGIC ----
 		if cfg.Mode != "scan" && !cfg.ProbeOnly {
@@ -37,14 +43,23 @@ var rootCmd = &cobra.Command{
 			}
 
 			cfg.LIP = internal.LocalIP(cfg.LIP)
-			internal.ServeDirGo(cfg)
+			internal.ServeDirGo(cfg, stop)
 			time.Sleep(500 * time.Millisecond)
+			serverRunning = true
 		}
 		// ---- END ----
 
 		internal.RunScript(cfg)
+		if !serverRunning {
+			return
+		}
+
 		logger.Info("tvctrl running — press Ctrl+C to exit")
-		<-make(chan struct{})
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt)
+
+		<-sig       // wait for Ctrl+C
+		close(stop) // trigger shutdown
 
 	},
 }
@@ -58,6 +73,7 @@ func Execute() {
 
 func init() {
 	initHelpTemplate()
+	rootCmd.CompletionOptions.DisableDefaultCmd = false
 
 	// ---- execution flags ----
 	rootCmd.Flags().BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only when using mode: auto")
@@ -68,6 +84,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&noCache, "no-cache", false, "Disable cache usage")
 	rootCmd.Flags().BoolVar(&cfg.ListCache, "list-cache", cfg.ListCache, "List cached AVTransport devices")
 	rootCmd.Flags().StringVar(&cfg.ForgetCache, "forget-cache", cfg.ForgetCache, "Forget cache (interactive | IP | all)")
+	rootCmd.Flags().IntVar(&cfg.SelectCache, "select-cache", -1, "Select cached device by index")
 
 	// ---- scan flags ----
 	rootCmd.Flags().StringVar(&cfg.Subnet, "subnet", cfg.Subnet, "Subnet to scan (e.g. 192.168.1.0/24)")
@@ -102,6 +119,7 @@ Cache:
   --no-cache          Disable cache usage
   --list-cache        List cached AVTransport devices
   --forget-cache      Forget cache (interactive | IP | all)
+  --select-cache	  Select cached device by index
 
 Scan:
   --deep-search		  Use a bigger list when probing for device enpoints (Method:slower and more noisy) 
@@ -119,5 +137,10 @@ Media:
   --Lip string        Local IP for serving media
   --Ldir string       Local directory to serve
   --LPort string      Local port to serve
+
+
+Autocomplete mechanism (Optional UI helper)-> 
+		tvctrl install-completion
+		exec $SHELL
 `)
 }

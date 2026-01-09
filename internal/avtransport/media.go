@@ -3,13 +3,62 @@ package avtransport
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
+	"tvctrl/logger"
 )
 
 type protocolInfoResp struct {
 	Sink string `xml:"Body>GetProtocolInfoResponse>Sink"`
+}
+
+func soapRequest(controlURL string, body string, soapAction string) error {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	req, err := http.NewRequest("POST", controlURL, bytes.NewBufferString(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.Header.Set("SOAPAction", soapAction)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	logger.Notify("Status: %d", resp.StatusCode)
+	logger.Info("Response: %s", string(respBody))
+	fmt.Println()
+
+	return nil
+}
+
+func soapRequestRaw(controlURL, body, soapAction string) (*http.Response, error) {
+	reqBody := dynamicBody(body)
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	req, err := http.NewRequest("POST", controlURL, bytes.NewBufferString(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.Header.Set("SOAPAction", soapAction)
+
+	return client.Do(req)
 }
 
 func FetchMediaProtocols(controlURL string) (map[string][]string, error) {
@@ -43,22 +92,4 @@ func FetchMediaProtocols(controlURL string) (map[string][]string, error) {
 	}
 
 	return media, nil
-}
-
-func soapRequestRaw(controlURL, body, soapAction string) (*http.Response, error) {
-	reqBody := DynamicBody(body)
-
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
-
-	req, err := http.NewRequest("POST", controlURL, bytes.NewBufferString(reqBody))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	req.Header.Set("SOAPAction", soapAction)
-
-	return client.Do(req)
 }

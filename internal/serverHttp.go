@@ -5,14 +5,25 @@ import (
 	"tvctrl/logger"
 )
 
-func ServeDirGo(cfg Config) {
+func ServeDirGo(cfg Config, stop <-chan struct{}) {
+	cfg.ServerUp = true
 	fs := http.FileServer(http.Dir(cfg.LDir))
+
+	srv := &http.Server{
+		Addr:    "0.0.0.0:" + cfg.ServePort,
+		Handler: fs,
+	}
 
 	go func() {
 		logger.Success("Go HTTP server serving: %s", cfg.LDir)
-		err := http.ListenAndServe("0.0.0.0:"+cfg.ServePort, fs)
-		if err != nil {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal("HTTP server error: %v", err)
 		}
+	}()
+
+	go func() {
+		<-stop
+		logger.Notify("Shutting down HTTP server")
+		_ = srv.Close()
 	}()
 }
