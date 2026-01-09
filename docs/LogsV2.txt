@@ -1,0 +1,128 @@
+TvController – Version 2 (V2) Upgrade Notes
+==========================================
+
+This version focuses on correctness, control flow clarity, discoverability,
+and professional CLI behavior while preserving all existing functionality.
+
+--------------------------------------------------
+CORE ARCHITECTURE
+--------------------------------------------------
+- Full migration from manual argument parsing to Cobra
+- Centralized configuration via internal.Config
+- DefaultConfig used strictly as fallback defaults
+- Flags now write directly into Config fields
+- Execution logic moved out of cmd into internal RunScript()
+
+--------------------------------------------------
+MODES
+--------------------------------------------------
+Supported modes via --mode flag:
+
+- auto    (default)
+  - SSDP discovery
+  - Cache lookup (optional)
+  - Direct probe fallback
+  - Sends media if resolved
+
+- manual
+  - Uses explicit TV endpoint flags
+  - Sends media immediately
+
+- scan
+  - Discovery-only mode
+  - NO media serving
+  - NO playback commands
+  - Safe for network inspection
+
+--------------------------------------------------
+SCAN MODE IMPROVEMENTS
+--------------------------------------------------
+- SSDP-only scanning via --ssdp
+- Single-IP probing via --Tip
+- Subnet scanning via --subnet (CIDR)
+- Results are cached automatically
+- No AVTransport Play / SetURI commands are sent
+- Identity enrichment still performed (safe GETs)
+
+--------------------------------------------------
+AVTRANSPORT PROBING
+--------------------------------------------------
+- Dynamic SOAP probing (GetTransportInfo)
+- Accepts HTTP 200 and 500 as valid AVTransport endpoints
+- Automatically captures:
+  - ControlURL
+  - Vendor
+  - Identity info
+- Results stored in cache (respects --auto-cache)
+
+--------------------------------------------------
+CACHE SYSTEM
+--------------------------------------------------
+- Cache can be:
+  - Listed (--list-cache)
+  - Forgotten (--forget-cache [IP|all|interactive])
+  - Auto-saved (--auto-cache)
+- Cache is used only when explicitly enabled
+- Scan mode still writes cache entries (intended behavior)
+
+--------------------------------------------------
+IDENTITY ENRICHMENT
+--------------------------------------------------
+- Expanded descriptor path list
+- Live logging of each probed endpoint
+- Successful descriptor path is logged
+- Failure is clearly reported after all attempts
+
+--------------------------------------------------
+LOGGING SYSTEM
+--------------------------------------------------
+Color-coded structured logger:
+- Fatal   → Red
+- Success → Blue (neon)
+- Info    → Green
+- Notify  → Yellow
+- Result  → Purple (final summaries)
+
+Probe and scan results are always printed last for clarity.
+
+--------------------------------------------------
+CLI / UX IMPROVEMENTS
+--------------------------------------------------
+- Custom Cobra help template
+- Flags grouped by category:
+  - Execution
+  - Cache
+  - Scan
+  - TV
+  - Media
+- Clean, readable --help output
+- No unsupported template functions
+- Compatible with bash/zsh completion (future-ready)
+
+--------------------------------------------------
+NETWORK SAFETY
+--------------------------------------------------
+- Scan mode never serves files
+- Scan mode never sends Play/SetURI
+- Probe-only mode exits cleanly before playback
+- Explicit separation between discovery and playback paths
+
+--------------------------------------------------
+INTERNAL CLEANUPS
+--------------------------------------------------
+- Removed duplicated probe logic
+- Introduced tryProbe() helper
+- Unified auto / scan / manual control flow
+- Reduced flag-side decision making
+- Internal logic fully owns execution behavior
+
+--------------------------------------------------
+FUTURE (V3 – PLANNED)
+--------------------------------------------------
+- Device trust / pairing to remove TV confirmation prompts
+- Persistent trusted device identity
+- Vendor-specific trust APIs (where available)
+
+--------------------------------------------------
+END OF V2
+--------------------------------------------------
