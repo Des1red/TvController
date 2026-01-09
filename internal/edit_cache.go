@@ -3,25 +3,53 @@ package internal
 import (
 	"fmt"
 	"strings"
-	"tvctrl/internal/avtransport"
 	"tvctrl/internal/cache"
 	"tvctrl/logger"
 )
 
-func storeInCache(cfg *Config, target *avtransport.Target) {
-	if !cfg.AutoCache {
-		if !confirm("Store this AVTransport endpoint in cache?") {
-			return
-		}
+func storeInCache(cfg *Config, update cache.Device) {
+	if !cfg.UseCache {
+		return
 	}
 	store, _ := cache.Load()
 	dev := store[cfg.TIP]
 
-	if dev.ControlURL == "" {
-		dev.ControlURL = target.ControlURL
+	alreadyStored := dev.ControlURL != ""
+
+	if !cfg.AutoCache && !alreadyStored {
+		if !confirm("Store this AVTransport endpoint in cache?") {
+			return
+		}
 	}
-	if dev.Vendor == "" {
-		dev.Vendor = cfg.TVVendor
+
+	// --- merge ControlURL ---
+	if dev.ControlURL == "" && update.ControlURL != "" {
+		dev.ControlURL = update.ControlURL
+	}
+
+	// --- merge Vendor ---
+	if dev.Vendor == "" && update.Vendor != "" {
+		dev.Vendor = update.Vendor
+	}
+
+	// --- merge Identity ---
+	if update.Identity != nil {
+		dev.Identity = update.Identity
+	}
+
+	// --- merge Actions ---
+	if update.Actions != nil {
+		if dev.Actions == nil {
+			dev.Actions = map[string]bool{}
+		}
+		for k, v := range update.Actions {
+			dev.Actions[k] = v
+		}
+	}
+
+	// --- merge Media ---
+	if update.Media != nil {
+		dev.Media = update.Media
 	}
 
 	store[cfg.TIP] = dev

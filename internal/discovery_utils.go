@@ -54,11 +54,13 @@ func trySSDP(cfg *Config) bool {
 		3*time.Second,
 	)
 
-	if err == nil {
-		store, _ := cache.Load()
-		dev := store[cfg.TIP]
+	update := cache.Device{
+		ControlURL: cfg.ControlURL(),
+		Vendor:     tv.Vendor,
+	}
 
-		dev.Identity = map[string]any{
+	if err == nil {
+		update.Identity = map[string]any{
 			"friendly_name": info.FriendlyName,
 			"manufacturer":  info.Manufacturer,
 			"model_name":    info.ModelName,
@@ -66,29 +68,16 @@ func trySSDP(cfg *Config) bool {
 			"udn":           info.UDN,
 			"presentation":  info.Presentation,
 		}
-
-		store[cfg.TIP] = dev
-		_ = cache.Save(store)
 	}
 
-	if err == nil {
-		store, _ := cache.Load()
-		dev := store[cfg.TIP]
-
-		// preserve existing fields
-		if dev.ControlURL == "" {
-			dev.ControlURL = cfg.ControlURL()
-		}
-		if dev.Vendor == "" {
-			dev.Vendor = tv.Vendor
-		}
-
-		dev.Actions = caps.Actions
-		dev.Media = caps.Media
-
-		store[cfg.TIP] = dev
-		_ = cache.Save(store)
+	if err == nil && caps != nil {
+		update.Actions = caps.Actions
+		update.Media = caps.Media
+	} else {
+		logger.Notify("Capability enrichment failed: %v", err)
 	}
+
+	storeInCache(cfg, update)
 
 	return true
 }
@@ -113,11 +102,13 @@ func probeAVTransport(cfg *Config) (bool, error) {
 		"http://"+cfg.TIP,
 		3*time.Second,
 	)
-	if err == nil {
-		store, _ := cache.Load()
-		dev := store[cfg.TIP]
+	update := cache.Device{
+		ControlURL: target.ControlURL,
+		Vendor:     cfg.TVVendor,
+	}
 
-		dev.Identity = map[string]any{
+	if err == nil {
+		update.Identity = map[string]any{
 			"friendly_name": info.FriendlyName,
 			"manufacturer":  info.Manufacturer,
 			"model_name":    info.ModelName,
@@ -125,35 +116,20 @@ func probeAVTransport(cfg *Config) (bool, error) {
 			"udn":           info.UDN,
 			"presentation":  info.Presentation,
 		}
-
-		// preserve known fields
-		if dev.ControlURL == "" {
-			dev.ControlURL = target.ControlURL
-		}
-		if dev.Vendor == "" {
-			dev.Vendor = cfg.TVVendor
-		}
-		if len(observedActions) > 0 {
-			if dev.Actions == nil {
-				dev.Actions = map[string]bool{}
-			}
-			for k, v := range observedActions {
-				dev.Actions[k] = v
-			}
-		}
-
-		store[cfg.TIP] = dev
-		_ = cache.Save(store)
 	} else {
 		logger.Notify("%v", err)
 	}
+
+	if len(observedActions) > 0 {
+		update.Actions = observedActions
+	}
+
+	storeInCache(cfg, update)
 
 	logger.Success("\n=== AVTransport Probe Summary ===")
 
 	logger.Result(" IP        : %s", cfg.TIP)
 	logger.Result(" ControlURL: %s", target.ControlURL)
-
-	storeInCache(cfg, target)
 
 	return true, nil
 }

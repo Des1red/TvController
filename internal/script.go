@@ -88,8 +88,10 @@ func runAuto(cfg Config) {
 	}
 
 	// 3) Probe fallback
-	tryProbe(cfg, true)
-	logger.Fatal("Unable to resolve AVTransport endpoint")
+	err := tryProbe(cfg, true)
+	if err {
+		logger.Fatal("Unable to resolve AVTransport endpoint")
+	}
 }
 
 func tryProbe(cfg Config, doPlayback bool) bool {

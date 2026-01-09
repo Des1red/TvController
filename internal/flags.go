@@ -28,7 +28,7 @@ type Config struct {
 
 var DefaultConfig = Config{
 	AutoCache: false,
-	UseCache:  false,
+	UseCache:  true,
 	ProbeOnly: false,
 	Discover:  false,
 	Mode:      "auto",

@@ -11,12 +11,14 @@ import (
 )
 
 var cfg = internal.DefaultConfig
-
+var noCache bool
 var rootCmd = &cobra.Command{
 	Use:   "tvctrl",
 	Short: "Simple TV controller using AVTransport",
 	Run: func(cmd *cobra.Command, args []string) {
 
+		//FLAG INVERSION HERE
+		cfg.UseCache = !noCache
 		// Cache commands exit early
 		if internal.HandleCacheCommands(cfg) {
 			os.Exit(0)
@@ -41,6 +43,9 @@ var rootCmd = &cobra.Command{
 		// ---- END ----
 
 		internal.RunScript(cfg)
+		logger.Info("tvctrl running — press Ctrl+C to exit")
+		<-make(chan struct{})
+
 	},
 }
 
@@ -60,7 +65,7 @@ func init() {
 
 	// ---- cache flags ----
 	rootCmd.Flags().BoolVar(&cfg.AutoCache, "auto-cache", cfg.AutoCache, "Skip cache save confirmation")
-	rootCmd.Flags().BoolVar(&cfg.UseCache, "no-cache", cfg.UseCache, "Disable cache usage")
+	rootCmd.Flags().BoolVar(&noCache, "no-cache", false, "Disable cache usage")
 	rootCmd.Flags().BoolVar(&cfg.ListCache, "list-cache", cfg.ListCache, "List cached AVTransport devices")
 	rootCmd.Flags().StringVar(&cfg.ForgetCache, "forget-cache", cfg.ForgetCache, "Forget cache (interactive | IP | all)")
 
@@ -79,7 +84,7 @@ func init() {
 	rootCmd.Flags().StringVar(&cfg.LFile, "Lf", cfg.LFile, "Local media file")
 	rootCmd.Flags().StringVar(&cfg.LIP, "Lip", cfg.LIP, "Local IP for serving media")
 	rootCmd.Flags().StringVar(&cfg.LDir, "Ldir", cfg.LDir, "Local directory to serve")
-	rootCmd.Flags().StringVar(&cfg.ServePort, "LPort", cfg.LDir, "Local port to serve")
+	rootCmd.Flags().StringVar(&cfg.ServePort, "LPort", cfg.ServePort, "Local port to serve")
 }
 
 func initHelpTemplate() {
