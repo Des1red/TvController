@@ -2,7 +2,6 @@ package internal
 
 import (
 	"log"
-	"os"
 	"strings"
 	"tvctrl/internal/avtransport"
 	"tvctrl/internal/cache"
@@ -61,10 +60,17 @@ func runAuto(cfg Config) {
 	}
 
 	// 3) Probe fallback
-	ok := tryProbe(cfg, true)
+	ok := tryProbe(cfg)
 	if !ok {
 		logger.Fatal("Unable to resolve AVTransport endpoint")
 	}
+
+	if cfg.ProbeOnly {
+		logger.Success("Probe completed (no playback).")
+		return
+	}
+
+	runWithConfig(cfg)
 }
 
 func runManual(cfg Config) {
@@ -78,7 +84,7 @@ func runManual(cfg Config) {
 }
 
 func runScan(cfg Config) {
-	// --- SSDP-only scan ---
+	// --- SSDP scan ---
 	if cfg.Discover {
 		if trySSDP(&cfg) {
 			logger.Success("Device discovered via SSDP")
@@ -95,40 +101,17 @@ func runScan(cfg Config) {
 	}
 
 	// --- Single-IP probe ---
-	tryProbe(cfg, false)
+	tryProbe(cfg)
 
 	logger.Success("Mode : Scan , completed")
 }
 
-func tryProbe(cfg Config, doPlayback bool) bool {
+func tryProbe(cfg Config) bool {
 	ok, err := probeAVTransport(&cfg)
 	if err != nil {
 		logger.Fatal("Error: %v", err)
 	}
-
-	// If we're not allowed to play (scan), stop here.
-	if !doPlayback {
-		if ok {
-			logger.Success("Probe completed (scan-only).")
-		} else {
-			logger.Notify("Probe completed (no AVTransport found).")
-		}
-		return ok
-	}
-
-	// Playback-allowed path (auto/manual)
-	if cfg.ProbeOnly {
-		logger.Success("Probe completed (no playback).")
-		os.Exit(0)
-	} else {
-		logger.Success("Probe completed (sending file).")
-	}
-
-	if ok {
-		runWithConfig(cfg)
-		return true
-	}
-	return false
+	return ok
 }
 
 func tryCache(cfg *Config) bool {
