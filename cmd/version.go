@@ -1,3 +1,13 @@
 package cmd
 
-var Version = "v2.0.0"
+import (
+	"fmt"
+	"os"
+)
+
+var Version = "dev v2.0.0."
+
+func printVersionAndExit() {
+	fmt.Printf("tvctrl %s\n", Version)
+	os.Exit(0)
+}
