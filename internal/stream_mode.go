@@ -4,6 +4,7 @@ package internal
 import (
 	"errors"
 	"strings"
+	"tvctrl/internal/avtransport"
 	"tvctrl/logger"
 )
 
@@ -28,31 +29,35 @@ func StartStreamMode(cfg Config, stop <-chan struct{}) {
 
 	// 4) Start stream HTTP server (/stream)
 	streamPath := "/stream"
-	ServeStreamGo(cfg, stop, streamPath, container, src)
+	// Resolve AVTransport ONCE
+	if cfg.UseCache {
+		if tryCache(&cfg) {
+			goto resolved
+		}
+	}
 
-	// 5) Run discovery + AVTransport as usual, but pointing to /stream
-	//    We do NOT use cfg.LFile/dir MediaURL here; we force stream URL.
-	//cfg.StreamPath = streamPath                            // optional field if you add it; if not, ignore this line
-	//cfg.OverrideMediaURL = BuildStreamURL(cfg, streamPath) // optional field if you add it; if not, use local var below
+	if !tryProbe(&cfg) {
+		logger.Fatal("Unable to resolve AVTransport endpoint")
+	}
 
-	// Reuse existing flow: runAuto/runManual ultimately call runWithConfig(cfg)
-	// But cfg.MediaURL() currently returns your normal static URL.
-	// Minimal, safe approach: bypass runWithConfig and construct target with stream URL directly:
-	// controlURL := cfg.ControlURL()
-	// if controlURL == "" && cfg.Mode == "stream" {
-	// 	// Let existing auto/manual logic resolve it
-	// }
+resolved:
 
-	// We want your existing resolve logic. So:
-	// - For stream, we still run auto/manual logic, but we need MediaURL() to be stream URL.
-	// If you don't want to add fields to Config, do direct playback after resolve:
+	controlURL := cfg.ControlURL()
+	if controlURL == "" {
+		logger.Fatal("ControlURL not resolved")
+	}
 
-	// Resolve AVTransport endpoint using the same strategy as auto mode does
-	// (we call runAuto but it uses cfg.MediaURL(). So we do the direct resolve here.)
-	// Instead: copy the resolve logic minimal: SSDP -> cache -> probe, then play.
+	// Now fetch protocol info from the SAME ControlURL
+	media, err := avtransport.FetchMediaProtocols(controlURL)
+	if err != nil {
+		logger.Notify("ProtocolInfo fetch failed, using fallback MIME")
+	}
 
-	// Minimal approach: runAuto-like resolution, then runWithTarget with stream URL:
-	resolveAndPlayStream(cfg, container, streamPath)
+	// choose MIME
+	mime := selectMime(container, media)
+	logger.Notify("Using stream MIME: %s", mime)
+	ServeStreamGo(cfg, stop, streamPath, mime, src)
+	resolveAndPlayStream(cfg, streamPath)
 }
 
 // ---- helpers ----
@@ -65,7 +70,7 @@ func BuildStreamURL(cfg Config, streamPath string) string {
 // Container interface: designed to extend later (mp4, mkv, etc)
 type StreamContainer interface {
 	Key() string
-	ContentType() string
+	MimeCandidates() []string
 }
 
 // Source interface: later you can implement screen capture, remote proxy, etc
@@ -94,8 +99,13 @@ func GetContainer(key string) (StreamContainer, error) {
 type tsContainer struct{}
 
 func (tsContainer) Key() string { return "ts" }
-func (tsContainer) ContentType() string {
-	return "video/mpeg"
+
+func (tsContainer) MimeCandidates() []string {
+	return []string{
+		"video/mpeg",               // most DLNA TVs accept this
+		"application/octet-stream", // very permissive fallback
+		"video/mp2t",               // least compatible
+	}
 }
 
 // Phase-1 source builder: if -Lf is provided, stream that file’s bytes.
@@ -113,3 +123,23 @@ func BuildStreamSource(cfg Config) (StreamSource, error) {
 type fileSource struct{ path string }
 
 // implemented in internal/stream_source_file.go
+
+func selectMime(
+	container StreamContainer,
+	supported map[string][]string,
+) string {
+
+	// If TV returned nothing → fallback
+	if len(supported) == 0 {
+		return "video/mpeg"
+	}
+
+	for _, cand := range container.MimeCandidates() {
+		if _, ok := supported[cand]; ok {
+			return cand
+		}
+	}
+
+	// Nothing matched → safe fallback
+	return "video/mpeg"
+}

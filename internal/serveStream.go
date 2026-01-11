@@ -13,7 +13,7 @@ func ServeStreamGo(
 	cfg Config,
 	stop <-chan struct{},
 	streamPath string,
-	container StreamContainer,
+	mime string,
 	source StreamSource,
 ) {
 	cfg.ServerUp = true
@@ -34,7 +34,8 @@ func ServeStreamGo(
 		defer rc.Close()
 
 		// w.Header().Set("Content-Type", container.ContentType())
-		w.Header().Set("Content-Type", "video/mpeg")
+		// w.Header().Set("Content-Type", "video/mpeg")
+		w.Header().Set("Content-Type", mime)
 
 		// For live-ish behavior, don't set Content-Length.
 		// Many TVs accept chunked transfer; Go will do it automatically if no length is set.
@@ -58,7 +59,13 @@ func ServeStreamGo(
 	}
 
 	go func() {
-		logger.Success("Go HTTP stream server listening: %s%s (type=%s)", "http://"+cfg.LIP+":"+cfg.ServePort, streamPath, container.Key())
+		logger.Success(
+			"Go HTTP stream server listening: %s%s (mime=%s)",
+			"http://"+cfg.LIP+":"+cfg.ServePort,
+			streamPath,
+			mime,
+		)
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal("HTTP stream server error: %v", err)
 		}

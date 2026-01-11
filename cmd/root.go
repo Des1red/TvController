@@ -52,10 +52,10 @@ func Execute() {
 	if mode == "stream" && !cfg.ProbeOnly {
 		serverRunning = true
 	}
-	if mode == "stream" {
-		logger.Notify("Waiting 10 seconds before starting playback...")
-		time.Sleep(10 * time.Second)
-	}
+	// if mode == "stream" {
+	// 	logger.Notify("Waiting 10 seconds before starting playback...")
+	// 	time.Sleep(10 * time.Second)
+	// }
 
 	internal.RunScript(cfg, stop)
 
