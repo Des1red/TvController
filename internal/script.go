@@ -2,7 +2,6 @@ package internal
 
 import (
 	"log"
-	"strings"
 	"tvctrl/internal/avtransport"
 	"tvctrl/internal/cache"
 	"tvctrl/logger"
@@ -30,14 +29,16 @@ func runWithConfig(cfg Config) {
 	avtransport.Run(target, meta)
 }
 
-func RunScript(cfg Config) {
+func RunScript(cfg Config, stop <-chan struct{}) {
 	if cfg.SelectCache != -1 {
 		logger.Notify("Using explicitly selected cached device")
 		runWithConfig(cfg)
 		return
 	}
-	mode := strings.ToLower(cfg.Mode)
+	mode := NormalizeMode(cfg.Mode)
 	switch mode {
+	case "stream":
+		startStream(cfg, stop)
 	case "scan":
 		runScan(cfg)
 	case "manual":
@@ -151,4 +152,9 @@ func tryCache(cfg *Config) bool {
 	cfg._CachedControlURL = dev.ControlURL
 
 	return true
+}
+
+func startStream(cfg Config, stop <-chan struct{}) {
+	// Implemented in internal/stream_mode.go (next section)
+	StartStreamMode(cfg, stop)
 }

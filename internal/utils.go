@@ -8,6 +8,10 @@ import (
 	"tvctrl/logger"
 )
 
+func NormalizeMode(mode string) string {
+	return strings.ToLower(strings.TrimSpace(mode))
+}
+
 func (c Config) ControlURL() string {
 	if c._CachedControlURL != "" {
 		return c._CachedControlURL

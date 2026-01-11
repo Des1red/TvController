@@ -8,7 +8,7 @@ import (
 
 func parseFlags() {
 	pflag.BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only when using mode: auto")
-	pflag.StringVar(&cfg.Mode, "mode", cfg.Mode, "Execution mode (auto/manual/scan)")
+	pflag.StringVar(&cfg.Mode, "mode", cfg.Mode, "Execution mode (auto/manual/stream/scan)")
 
 	// cache
 	pflag.BoolVar(&cfg.AutoCache, "auto-cache", cfg.AutoCache, "Skip cache save confirmation")

@@ -31,7 +31,8 @@ func Execute() {
 	serverRunning := false
 
 	// ---- PRE-RUN LOGIC ----
-	if cfg.Mode != "scan" && !cfg.ProbeOnly {
+	mode := internal.NormalizeMode(cfg.Mode)
+	if mode != "scan" && mode != "stream" && !cfg.ProbeOnly {
 		if cfg.LFile == "" {
 			logger.Fatal("Missing -Lf (media file)")
 			os.Exit(1)
@@ -47,8 +48,16 @@ func Execute() {
 		time.Sleep(500 * time.Millisecond)
 		serverRunning = true
 	}
+	// Stream mode starts its own HTTP server (so keep the process alive)
+	if mode == "stream" && !cfg.ProbeOnly {
+		serverRunning = true
+	}
+	if mode == "stream" {
+		logger.Notify("Waiting 10 seconds before starting playback...")
+		time.Sleep(10 * time.Second)
+	}
 
-	internal.RunScript(cfg)
+	internal.RunScript(cfg, stop)
 
 	if !serverRunning {
 		return
