@@ -35,15 +35,17 @@ func Execute() {
 
 	// ---- PRE-RUN LOGIC ----
 	mode := utils.NormalizeMode(cfg.Mode)
-	if mode != "scan" && mode != "stream" && !cfg.ProbeOnly {
+	if mode != "scan" && !cfg.ProbeOnly {
 		if cfg.LFile == "" {
 			logger.Fatal("Missing -Lf (media file)")
 			os.Exit(1)
 		}
 
-		if err := utils.ValidateFile(cfg.LFile); err != nil {
-			logger.Fatal("Invalid file: %v", err)
-			os.Exit(1)
+		if mode != "stream" {
+			if err := utils.ValidateFile(cfg.LFile); err != nil {
+				logger.Fatal("Invalid file: %v", err)
+				os.Exit(1)
+			}
 		}
 
 		cfg.LIP = utils.LocalIP(cfg.LIP)
@@ -51,14 +53,6 @@ func Execute() {
 		time.Sleep(500 * time.Millisecond)
 		serverRunning = true
 	}
-	// Stream mode starts its own HTTP server (so keep the process alive)
-	if mode == "stream" && !cfg.ProbeOnly {
-		serverRunning = true
-	}
-	// if mode == "stream" {
-	// 	logger.Notify("Waiting 10 seconds before starting playback...")
-	// 	time.Sleep(10 * time.Second)
-	// }
 
 	internal.RunScript(cfg, stop)
 

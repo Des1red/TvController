@@ -22,10 +22,8 @@ func start(cfg models.Config, stop <-chan struct{}) {
 
 	containerKey := "ts"
 	switch kind {
-	case StreamScreen:
-		containerKey = "mp4"
 	case StreamExternal:
-		containerKey = "passthrough" // NEW
+		containerKey = "passthrough"
 	}
 
 	container, err := GetContainer(containerKey)
@@ -68,7 +66,7 @@ resolved:
 	}
 
 	// choose MIME
-	mime := selectMime(container, media, cfg.Screen)
+	mime := selectMime(container, media)
 	logger.Notify("Using stream MIME: %s", mime)
 	ServeStreamGo(cfg, stop, streamPath, mime, src)
 	for !cfg.ServerUp {

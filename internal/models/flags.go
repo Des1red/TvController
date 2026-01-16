@@ -4,7 +4,6 @@ type Config struct {
 	Mode      string // "auto" | "manual"
 	ProbeOnly bool
 	Discover  bool
-	Screen    bool
 
 	SelectCache int
 	AutoCache   bool
@@ -30,7 +29,6 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	Screen:      false,
 	SelectCache: -1,
 	AutoCache:   false,
 	UseCache:    true,

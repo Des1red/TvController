@@ -10,9 +10,6 @@ func parseFlags() {
 	pflag.BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only when using mode: auto")
 	pflag.StringVar(&cfg.Mode, "mode", cfg.Mode, "Execution mode (auto/manual/stream/scan)")
 
-	// stream 
-	pflag.BoolVar(&cfg.Screen, "screen", cfg.Screen, "Enable screen sharing as stream source")
-	
 	// cache
 	pflag.BoolVar(&cfg.AutoCache, "auto-cache", cfg.AutoCache, "Skip cache save confirmation")
 	pflag.BoolVar(&noCache, "no-cache", false, "Disable cache usage")

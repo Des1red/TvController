@@ -48,19 +48,7 @@ type StreamReadCloser interface {
 // Registry for containers
 var containerRegistry = map[string]StreamContainer{
 	"ts":          tsContainer{},
-	"mp4":         mp4Container{},
 	"passthrough": passthroughContainer{},
-}
-
-type mp4Container struct{}
-
-func (mp4Container) Key() string { return "mp4" }
-
-func (mp4Container) MimeCandidates() []string {
-	return []string{
-		"video/mp4",
-		"application/octet-stream",
-	}
 }
 
 func GetContainer(key string) (StreamContainer, error) {

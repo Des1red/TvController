@@ -12,14 +12,10 @@ type StreamKind int
 
 const (
 	StreamFile StreamKind = iota
-	StreamScreen
 	StreamExternal
 )
 
 func ResolveStreamKind(cfg models.Config) StreamKind {
-	if cfg.Screen {
-		return StreamScreen
-	}
 	if strings.HasPrefix(cfg.LFile, "http://") || strings.HasPrefix(cfg.LFile, "https://") {
 		return StreamExternal
 	}

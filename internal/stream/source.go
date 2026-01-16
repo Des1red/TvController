@@ -11,8 +11,6 @@ func BuildStreamSource(cfg models.Config) (StreamSource, error) {
 	kind := ResolveStreamKind(cfg)
 
 	switch kind {
-	case StreamScreen:
-		return newRollingFileSource(), nil
 
 	case StreamExternal:
 		return urlSource{url: cfg.LFile}, nil

@@ -4,11 +4,21 @@ package stream
 import (
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"tvctrl/internal/models"
 	"tvctrl/logger"
 )
+
+type ClientProfile struct {
+	IP        string
+	UserAgent string
+	Headers   http.Header
+
+	WantsRange bool
+	DidHEAD    bool
+}
 
 func ServeStreamGo(
 	cfg models.Config,
@@ -20,9 +30,31 @@ func ServeStreamGo(
 	cfg.ServerUp = true
 
 	mux := http.NewServeMux()
+	profiles := make(map[string]*ClientProfile)
 
 	mux.HandleFunc(streamPath, func(w http.ResponseWriter, r *http.Request) {
-		logger.Notify("Stream request from %s", r.RemoteAddr) // Add this for debugging
+		clientIP := strings.Split(r.RemoteAddr, ":")[0]
+
+		p, ok := profiles[clientIP]
+		if !ok {
+			p = &ClientProfile{
+				IP:        clientIP,
+				UserAgent: r.UserAgent(),
+				Headers:   r.Header.Clone(),
+			}
+			profiles[clientIP] = p
+
+			logger.Notify("TV detected: %s (%s)", p.IP, p.UserAgent)
+		}
+
+		if r.Method == http.MethodHead {
+			p.DidHEAD = true
+		}
+
+		if r.Header.Get("Range") != "" {
+			p.WantsRange = true
+			logger.Notify("TV %s requested Range", p.IP)
+		}
 
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -36,22 +68,20 @@ func ServeStreamGo(
 		}
 		defer rc.Close()
 
-		// w.Header().Set("Content-Type", container.ContentType())
-		// w.Header().Set("Content-Type", "video/mpeg")
 		w.Header().Set("Content-Type", mime)
 
-		// For live-ish behavior, don't set Content-Length.
-		// Many TVs accept chunked transfer; Go will do it automatically if no length is set.
-		w.Header().Set("Accept-Ranges", "none")
+		// CHANGED: dynamic Accept-Ranges
+		if p.WantsRange {
+			w.Header().Set("Accept-Ranges", "bytes")
+		} else {
+			w.Header().Set("Accept-Ranges", "none")
+		}
 
-		// HEAD: only headers
 		if r.Method == http.MethodHead {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		// Stream bytes
-		// NOTE: This is phase-1 linear streaming. Range/seek comes later.
 		_, _ = io.Copy(w, rc)
 	})
 
