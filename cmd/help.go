@@ -24,7 +24,7 @@ func printHelp() {
 
 	fmt.Fprintln(w, "Execution:")
 	printFlag(w, "--probe-only", "", " Probe AVTransport only")
-	printFlag(w, "--mode", "string", "Execution mode (auto/manual/scan)")
+	printFlag(w, "--mode", "string", "Execution mode (auto/manual/scan/stream)")
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Cache:")
@@ -49,8 +49,7 @@ func printHelp() {
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Media:")
-	printFlag(w, "--screen     ", "", "    Enable screen sharing as stream source")
-	printFlag(w, "--Lf		     ", "string", "	   Local media file")
+	printFlag(w, "--Lf		     ", "string", "	   Local media file or url (url is stream explicit)")
 	printFlag(w, "--Lip		   ", "string", "	 Local IP")
 	printFlag(w, "--Ldir		  ", "string", "  Local directory")
 	printFlag(w, "--LPort		", "string", "Local port")
