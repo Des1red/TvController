@@ -1,9 +1,10 @@
-package internal
+package models
 
 type Config struct {
 	Mode      string // "auto" | "manual"
 	ProbeOnly bool
 	Discover  bool
+	Screen    bool
 
 	SelectCache int
 	AutoCache   bool
@@ -24,11 +25,12 @@ type Config struct {
 	LDir      string // directory to serve
 	ServePort string // local HTTP port
 
-	_CachedControlURL string
-	ServerUp          bool
+	CachedControlURL string
+	ServerUp         bool
 }
 
 var DefaultConfig = Config{
+	Screen:      false,
 	SelectCache: -1,
 	AutoCache:   false,
 	UseCache:    true,

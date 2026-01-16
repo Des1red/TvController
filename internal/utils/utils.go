@@ -1,10 +1,11 @@
-package internal
+package utils
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"tvctrl/internal/models"
 	"tvctrl/logger"
 )
 
@@ -12,16 +13,12 @@ func NormalizeMode(mode string) string {
 	return strings.ToLower(strings.TrimSpace(mode))
 }
 
-func (c Config) ControlURL() string {
-	if c._CachedControlURL != "" {
-		return c._CachedControlURL
-	}
-
-	if c.TIP == "" || c.TPort == "" {
+func ControlURL(cfg *models.Config) string {
+	if cfg.TIP == "" || cfg.TPort == "" {
 		return ""
 	}
 
-	path := c.TPath
+	path := cfg.TPath
 	if path == "" {
 		path = "/"
 	}
@@ -29,10 +26,10 @@ func (c Config) ControlURL() string {
 		path = "/" + path
 	}
 
-	return "http://" + c.TIP + ":" + c.TPort + path
+	return "http://" + cfg.TIP + ":" + cfg.TPort + path
 }
 
-func (c Config) BaseUrl() string {
+func BaseUrl(c *models.Config) string {
 	return "http://" + c.TIP + ":" + c.TPort
 }
 
@@ -47,7 +44,7 @@ func ValidateFile(path string) error {
 	return nil
 }
 
-func (cfg Config) MediaURL() string {
+func MediaURL(cfg *models.Config) string {
 	file := filepath.Base(cfg.LFile)
 	return "http://" + cfg.LIP + ":" + cfg.ServePort + "/" + file
 }
@@ -67,7 +64,7 @@ func LocalIP(ip string) string {
 	return ip
 }
 
-func confirm(msg string) bool {
+func Confirm(msg string) bool {
 	var ans string
 	logger.Info("%s (y/n): ", msg)
 	fmt.Scanln(&ans)

@@ -1,24 +1,25 @@
-package internal
+package cache
 
 import (
 	"fmt"
 	"sort"
 	"strings"
-	"tvctrl/internal/cache"
+	"tvctrl/internal/models"
+	"tvctrl/internal/utils"
 	"tvctrl/logger"
 )
 
-func storeInCache(cfg *Config, update cache.Device) {
+func StoreInCache(cfg *models.Config, update Device) {
 	if !cfg.UseCache || cfg.SelectCache != -1 {
 		return
 	}
-	store, _ := cache.Load()
+	store, _ := Load()
 	dev := store[cfg.TIP]
 
 	alreadyStored := dev.ControlURL != ""
 
 	if !cfg.AutoCache && !alreadyStored {
-		if !confirm("Store this AVTransport endpoint in cache?") {
+		if !utils.Confirm("Store this AVTransport endpoint in cache?") {
 			return
 		}
 	} else {
@@ -58,10 +59,10 @@ func storeInCache(cfg *Config, update cache.Device) {
 	}
 
 	store[cfg.TIP] = dev
-	_ = cache.Save(store)
+	_ = Save(store)
 }
 
-func LoadCachedTV(cfg *Config) {
+func LoadCachedTV(cfg *models.Config) {
 	ip, dev, ok := selectFromCache(cfg.SelectCache)
 	if !ok {
 		logger.Fatal("Invalid cache index: %d", cfg.SelectCache)
@@ -69,7 +70,7 @@ func LoadCachedTV(cfg *Config) {
 
 	cfg.TIP = ip
 	cfg.TVVendor = dev.Vendor
-	cfg._CachedControlURL = dev.ControlURL
+	cfg.CachedControlURL = dev.ControlURL
 
 	logger.Success(
 		"Using cached device [%d]: %s",
@@ -78,19 +79,19 @@ func LoadCachedTV(cfg *Config) {
 	)
 }
 
-func selectFromCache(index int) (string, cache.Device, bool) {
-	store, _ := cache.Load()
+func selectFromCache(index int) (string, Device, bool) {
+	store, _ := Load()
 	keys := sortedCache(store)
 
 	if index < 0 || index >= len(keys) {
-		return "", cache.Device{}, false
+		return "", Device{}, false
 	}
 
 	ip := keys[index]
 	return ip, store[ip], true
 }
 
-func sortedCache(store cache.Store) []string {
+func sortedCache(store Store) []string {
 	keys := make([]string, 0, len(store))
 	for ip := range store {
 		keys = append(keys, ip)
@@ -99,7 +100,7 @@ func sortedCache(store cache.Store) []string {
 	return keys
 }
 
-func HandleCacheCommands(cfg Config) bool {
+func HandleCacheCommands(cfg models.Config) bool {
 	if cfg.ListCache {
 		handleListCache()
 		return true
@@ -113,8 +114,8 @@ func HandleCacheCommands(cfg Config) bool {
 	return false
 }
 
-func handleForgetCache(cfg Config) {
-	store, err := cache.Load()
+func handleForgetCache(cfg models.Config) {
+	store, err := Load()
 	if err != nil {
 		logger.Fatal("%v", err)
 	}
@@ -127,10 +128,10 @@ func handleForgetCache(cfg Config) {
 	switch cfg.ForgetCache {
 
 	case "all":
-		if !confirm("Delete ALL cached devices?") {
+		if !utils.Confirm("Delete ALL cached devices?") {
 			return
 		}
-		_ = cache.Save(cache.Store{})
+		_ = Save(Store{})
 		logger.Success("Cache cleared.")
 		return
 
@@ -149,12 +150,12 @@ func handleForgetCache(cfg Config) {
 			return
 		}
 
-		if !confirm("Delete this entry?") {
+		if !utils.Confirm("Delete this entry?") {
 			return
 		}
 
 		delete(store, ip)
-		_ = cache.Save(store)
+		_ = Save(store)
 		logger.Success("Deleted %s", ip)
 		return
 
@@ -164,18 +165,18 @@ func handleForgetCache(cfg Config) {
 			return
 		}
 
-		if !confirm("Delete cached entry for " + cfg.ForgetCache + "?") {
+		if !utils.Confirm("Delete cached entry for " + cfg.ForgetCache + "?") {
 			return
 		}
 
 		delete(store, cfg.ForgetCache)
-		_ = cache.Save(store)
+		_ = Save(store)
 		logger.Success("Deleted %s", cfg.ForgetCache)
 	}
 }
 
 func handleListCache() {
-	store, err := cache.Load()
+	store, err := Load()
 	if err != nil {
 		logger.Fatal("Error: %v", err)
 	}

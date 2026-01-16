@@ -49,6 +49,7 @@ func printHelp() {
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Media:")
+	printFlag(w, "--screen     ", "", "    Enable screen sharing as stream source")
 	printFlag(w, "--Lf		     ", "string", "	   Local media file")
 	printFlag(w, "--Lip		   ", "string", "	 Local IP")
 	printFlag(w, "--Ldir		  ", "string", "  Local directory")

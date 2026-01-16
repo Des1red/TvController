@@ -3,42 +3,44 @@ package internal
 import (
 	"log"
 	"tvctrl/internal/avtransport"
-	"tvctrl/internal/cache"
+	"tvctrl/internal/models"
+	"tvctrl/internal/stream"
+	"tvctrl/internal/utils"
 	"tvctrl/logger"
 )
 
-func runWithConfig(cfg Config) {
+func runWithConfig(cfg *models.Config) {
 
-	controlURL := cfg.ControlURL()
+	controlURL := utils.ControlURL(cfg)
 	if controlURL == "" {
 		logger.Fatal("No AVTransport ControlURL resolved (internal state error)")
 	} else {
-		logger.Info("Control Url : %s", cfg.ControlURL())
+		logger.Info("Control Url : %s", utils.ControlURL(cfg))
 	}
 
-	if cfg._CachedControlURL != "" {
-		controlURL = cfg._CachedControlURL
+	if cfg.CachedControlURL != "" {
+		controlURL = cfg.CachedControlURL
 	}
 
 	target := avtransport.Target{
 		ControlURL: controlURL,
-		MediaURL:   cfg.MediaURL(),
+		MediaURL:   utils.MediaURL(cfg),
 	}
 
 	meta := avtransport.MetadataForVendor(cfg.TVVendor, target)
 	avtransport.Run(target, meta)
 }
 
-func RunScript(cfg Config, stop <-chan struct{}) {
+func RunScript(cfg models.Config, stop <-chan struct{}) {
 	if cfg.SelectCache != -1 {
 		logger.Notify("Using explicitly selected cached device")
-		runWithConfig(cfg)
+		runWithConfig(&cfg)
 		return
 	}
-	mode := NormalizeMode(cfg.Mode)
+	mode := utils.NormalizeMode(cfg.Mode)
 	switch mode {
 	case "stream":
-		startStream(cfg, stop)
+		runStream(cfg, stop)
 	case "scan":
 		runScan(cfg)
 	case "manual":
@@ -50,23 +52,23 @@ func RunScript(cfg Config, stop <-chan struct{}) {
 	}
 }
 
-func runAuto(cfg Config) {
+func runAuto(cfg models.Config) {
 	// 1) SSDP
-	if trySSDP(&cfg) {
-		runWithConfig(cfg)
+	if avtransport.TrySSDP(&cfg) {
+		runWithConfig(&cfg)
 		return
 	}
 
 	if cfg.UseCache {
 		// 2) Cache (interactive)
-		if tryCache(&cfg) {
-			runWithConfig(cfg)
+		if avtransport.TryCache(&cfg) {
+			runWithConfig(&cfg)
 			return
 		}
 	}
 
 	// 3) Probe fallback
-	ok := tryProbe(&cfg)
+	ok := avtransport.TryProbe(&cfg)
 	if !ok {
 		logger.Fatal("Unable to resolve AVTransport endpoint")
 	}
@@ -76,23 +78,23 @@ func runAuto(cfg Config) {
 		return
 	}
 
-	runWithConfig(cfg)
+	runWithConfig(&cfg)
 }
 
-func runManual(cfg Config) {
+func runManual(cfg models.Config) {
 	target := avtransport.Target{
-		ControlURL: cfg.ControlURL(),
-		MediaURL:   cfg.MediaURL(),
+		ControlURL: utils.ControlURL(&cfg),
+		MediaURL:   utils.MediaURL(&cfg),
 	}
 
 	meta := avtransport.MetadataForVendor(cfg.TVVendor, target)
 	avtransport.Run(target, meta)
 }
 
-func runScan(cfg Config) {
+func runScan(cfg models.Config) {
 	// --- SSDP scan ---
 	if cfg.Discover {
-		if trySSDP(&cfg) {
+		if avtransport.TrySSDP(&cfg) {
 			logger.Success("Device discovered via SSDP")
 		} else {
 			logger.Notify("No devices discovered via SSDP")
@@ -102,59 +104,17 @@ func runScan(cfg Config) {
 
 	// --- Subnet scan ---
 	if cfg.Subnet != "" {
-		scanSubnet(cfg)
+		avtransport.ScanSubnet(cfg)
 		return
 	}
 
 	// --- Single-IP probe ---
-	tryProbe(&cfg)
+	avtransport.TryProbe(&cfg)
 
 	logger.Success("Mode : Scan , completed")
 }
 
-func tryProbe(cfg *Config) bool {
-	ok, err := probeAVTransport(cfg)
-	if err != nil {
-		logger.Fatal("Error: %v", err)
-	}
-	return ok
-}
-
-func tryCache(cfg *Config) bool {
-	if cfg.TIP == "" {
-		return false
-	}
-
-	store, _ := cache.Load()
-	dev, ok := store[cfg.TIP]
-	if !ok {
-		return false
-	}
-
-	logger.Notify("\nCached device found:")
-	logger.Result(" IP        : %s", cfg.TIP)
-	logger.Result(" Vendor    : %s", dev.Vendor)
-	logger.Result(" ControlURL: %s", dev.ControlURL)
-
-	if !confirm("Use cached AVTransport endpoint?") {
-		return false
-	}
-
-	//  IMPORTANT: do NOT touch TPath / ControlURL builder
-	cfg.TVVendor = dev.Vendor
-
-	// Store FULL URL directly
-	cfg.TPath = ""
-	cfg.TPort = ""
-	cfg.TIP = ""
-
-	// Inject directly into playback phase
-	cfg._CachedControlURL = dev.ControlURL
-
-	return true
-}
-
-func startStream(cfg Config, stop <-chan struct{}) {
+func runStream(cfg models.Config, stop <-chan struct{}) {
 	// Implemented in internal/stream_mode.go (next section)
-	StartStreamMode(cfg, stop)
+	stream.StartStreamPlay(cfg, stop)
 }

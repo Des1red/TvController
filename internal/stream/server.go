@@ -1,16 +1,17 @@
 // internal/serverStream.go
-package internal
+package stream
 
 import (
 	"io"
 	"net/http"
 	"time"
 
+	"tvctrl/internal/models"
 	"tvctrl/logger"
 )
 
 func ServeStreamGo(
-	cfg Config,
+	cfg models.Config,
 	stop <-chan struct{},
 	streamPath string,
 	mime string,
@@ -21,6 +22,8 @@ func ServeStreamGo(
 	mux := http.NewServeMux()
 
 	mux.HandleFunc(streamPath, func(w http.ResponseWriter, r *http.Request) {
+		logger.Notify("Stream request from %s", r.RemoteAddr) // Add this for debugging
+
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return

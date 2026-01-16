@@ -24,7 +24,7 @@ Key outcome:
 
 - Selecting a cache entry:
   - Loads Vendor + ControlURL directly
-  - Injects `_CachedControlURL`
+  - Injects `CachedControlURL`
   - Skips SSDP, tryCache, probing, and mode dispatch
   - Runs playback immediately
 
@@ -125,7 +125,7 @@ REMINDERS (all applied)
 ========================================
 
 [ ] Do NOT allow cache writes when using --select-cache
-[ ] Keep `runWithConfig` relying on `_CachedControlURL`
+[ ] Keep `runWithConfig` relying on `CachedControlURL`
 [ ] Do NOT merge select-cache into tryCache
 [ ] Avoid mutating Mode / TIP / TPath to influence control flow
 [ ] Any new execution path must respect SelectCache override

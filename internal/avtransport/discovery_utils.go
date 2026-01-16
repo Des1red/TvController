@@ -1,16 +1,59 @@
-package internal
+package avtransport
 
 import (
 	"fmt"
 	"time"
-	"tvctrl/internal/avtransport"
 	"tvctrl/internal/cache"
 	"tvctrl/internal/identity"
+	"tvctrl/internal/models"
 	"tvctrl/internal/ssdp"
+	"tvctrl/internal/utils"
 	"tvctrl/logger"
 )
 
-func trySSDP(cfg *Config) bool {
+func TryProbe(cfg *models.Config) bool {
+	ok, err := probeAVTransport(cfg)
+	if err != nil {
+		logger.Fatal("Error: %v", err)
+	}
+	return ok
+}
+
+func TryCache(cfg *models.Config) bool {
+	if cfg.TIP == "" {
+		return false
+	}
+
+	store, _ := cache.Load()
+	dev, ok := store[cfg.TIP]
+	if !ok {
+		return false
+	}
+
+	logger.Notify("\nCached device found:")
+	logger.Result(" IP        : %s", cfg.TIP)
+	logger.Result(" Vendor    : %s", dev.Vendor)
+	logger.Result(" ControlURL: %s", dev.ControlURL)
+
+	if !utils.Confirm("Use cached AVTransport endpoint?") {
+		return false
+	}
+
+	//  IMPORTANT: do NOT touch TPath / ControlURL builder
+	cfg.TVVendor = dev.Vendor
+
+	// Store FULL URL directly
+	cfg.TPath = ""
+	cfg.TPort = ""
+	cfg.TIP = ""
+
+	// Inject directly into playback phase
+	cfg.CachedControlURL = dev.ControlURL
+
+	return true
+}
+
+func TrySSDP(cfg *models.Config) bool {
 	logger.Notify("Running SSDP discovery scan")
 	devices, _ := ssdp.ListenNotify(3 * time.Second)
 
@@ -41,21 +84,21 @@ func trySSDP(cfg *Config) bool {
 		cfg.TVVendor = tv.Vendor
 	}
 
-	caps, err := avtransport.EnrichCapabilities(
+	caps, err := EnrichCapabilities(
 		tv.AVTransportSCPD,
 		tv.ConnectionManagerCtrl,
-		avtransport.Target{
-			ControlURL: cfg.ControlURL(),
+		Target{
+			ControlURL: utils.ControlURL(cfg),
 		},
 	)
 
 	info, err := identity.Enrich(
-		cfg.BaseUrl(),
+		utils.BaseUrl(cfg),
 		3*time.Second,
 	)
 
 	update := cache.Device{
-		ControlURL: cfg.ControlURL(),
+		ControlURL: utils.ControlURL(cfg),
 		Vendor:     tv.Vendor,
 	}
 
@@ -77,27 +120,27 @@ func trySSDP(cfg *Config) bool {
 		logger.Notify("Capability enrichment failed: %v", err)
 	}
 
-	storeInCache(cfg, update)
+	cache.StoreInCache(cfg, update)
 
 	return true
 }
 
-func probeAVTransport(cfg *Config) (bool, error) {
+func probeAVTransport(cfg *models.Config) (bool, error) {
 	if cfg.TIP == "" {
 		return false, fmt.Errorf("probe requires -Tip")
 	}
 
 	logger.Notify("Probing AVTransport directly : %s", cfg.TIP)
 
-	target, err := avtransport.Probe(cfg.TIP, 8*time.Second, cfg.DeepSearch)
+	target, err := Probe(cfg.TIP, 8*time.Second, cfg.DeepSearch)
 	if err != nil {
 		return false, err
 	}
 
-	observedActions := avtransport.ValidateActions(*target)
+	observedActions := ValidateActions(*target)
 
 	// update cfg so playback can continue
-	cfg._CachedControlURL = target.ControlURL
+	cfg.CachedControlURL = target.ControlURL
 	info, err := identity.Enrich(
 		"http://"+cfg.TIP,
 		3*time.Second,
@@ -124,7 +167,7 @@ func probeAVTransport(cfg *Config) (bool, error) {
 		update.Actions = observedActions
 	}
 
-	storeInCache(cfg, update)
+	cache.StoreInCache(cfg, update)
 
 	logger.Success("\n=== AVTransport Probe Summary ===")
 

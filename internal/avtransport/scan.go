@@ -1,8 +1,9 @@
-package internal
+package avtransport
 
 import (
 	"fmt"
 	"net"
+	"tvctrl/internal/models"
 	"tvctrl/logger"
 )
 
@@ -57,7 +58,7 @@ func netmaskToUint32(mask net.IPMask) uint32 {
 		uint32(mask[3])
 }
 
-func scanSubnet(cfg Config) {
+func ScanSubnet(cfg models.Config) {
 	logger.Notify("Running subnet scan")
 	ips, err := expandCIDR(cfg.Subnet)
 	if err != nil {

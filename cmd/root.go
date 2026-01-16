@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"tvctrl/internal"
+	"tvctrl/internal/cache"
+	"tvctrl/internal/models"
+	"tvctrl/internal/utils"
 	"tvctrl/logger"
 )
 
-var cfg = internal.DefaultConfig
+var cfg = models.DefaultConfig
 var noCache bool
 
 func Execute() {
@@ -19,31 +22,31 @@ func Execute() {
 	cfg.UseCache = !noCache
 
 	// Cache commands exit early
-	if internal.HandleCacheCommands(cfg) {
+	if cache.HandleCacheCommands(cfg) {
 		os.Exit(0)
 	}
 
 	if cfg.SelectCache >= 0 {
-		internal.LoadCachedTV(&cfg)
+		cache.LoadCachedTV(&cfg)
 	}
 
 	stop := make(chan struct{})
 	serverRunning := false
 
 	// ---- PRE-RUN LOGIC ----
-	mode := internal.NormalizeMode(cfg.Mode)
+	mode := utils.NormalizeMode(cfg.Mode)
 	if mode != "scan" && mode != "stream" && !cfg.ProbeOnly {
 		if cfg.LFile == "" {
 			logger.Fatal("Missing -Lf (media file)")
 			os.Exit(1)
 		}
 
-		if err := internal.ValidateFile(cfg.LFile); err != nil {
+		if err := utils.ValidateFile(cfg.LFile); err != nil {
 			logger.Fatal("Invalid file: %v", err)
 			os.Exit(1)
 		}
 
-		cfg.LIP = internal.LocalIP(cfg.LIP)
+		cfg.LIP = utils.LocalIP(cfg.LIP)
 		internal.ServeDirGo(cfg, stop)
 		time.Sleep(500 * time.Millisecond)
 		serverRunning = true

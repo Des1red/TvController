@@ -2,10 +2,11 @@ package internal
 
 import (
 	"net/http"
+	"tvctrl/internal/models"
 	"tvctrl/logger"
 )
 
-func ServeDirGo(cfg Config, stop <-chan struct{}) {
+func ServeDirGo(cfg models.Config, stop <-chan struct{}) {
 	cfg.ServerUp = true
 	fs := http.FileServer(http.Dir(cfg.LDir))
 
