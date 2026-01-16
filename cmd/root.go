@@ -49,12 +49,16 @@ func Execute() {
 		}
 
 		cfg.LIP = utils.LocalIP(cfg.LIP)
-		internal.ServeDirGo(cfg, stop)
+		if mode != "scan" && !cfg.ProbeOnly {
+			if mode != "stream" {
+				internal.ServeDirGo(cfg, stop)
+			}
+		}
 		time.Sleep(500 * time.Millisecond)
 		serverRunning = true
 	}
 
-	internal.RunScript(cfg, stop)
+	internal.RunScript(&cfg, stop)
 
 	if !serverRunning {
 		return

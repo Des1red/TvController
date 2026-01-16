@@ -10,17 +10,17 @@ import (
 )
 
 func runWithConfig(cfg *models.Config) {
+	controlURL := cfg.CachedControlURL
+	if controlURL == "" {
+		controlURL = utils.ControlURL(cfg)
+	}
 
-	controlURL := utils.ControlURL(cfg)
 	if controlURL == "" {
 		logger.Fatal("No AVTransport ControlURL resolved (internal state error)")
-	} else {
-		logger.Info("Control Url : %s", utils.ControlURL(cfg))
+		return
 	}
 
-	if cfg.CachedControlURL != "" {
-		controlURL = cfg.CachedControlURL
-	}
+	logger.Info("Control Url : %s", controlURL)
 
 	target := avtransport.Target{
 		ControlURL: controlURL,
@@ -31,10 +31,10 @@ func runWithConfig(cfg *models.Config) {
 	avtransport.Run(target, meta)
 }
 
-func RunScript(cfg models.Config, stop <-chan struct{}) {
+func RunScript(cfg *models.Config, stop <-chan struct{}) {
 	if cfg.SelectCache != -1 {
 		logger.Notify("Using explicitly selected cached device")
-		runWithConfig(&cfg)
+		runWithConfig(cfg)
 		return
 	}
 	mode := utils.NormalizeMode(cfg.Mode)
@@ -52,23 +52,23 @@ func RunScript(cfg models.Config, stop <-chan struct{}) {
 	}
 }
 
-func runAuto(cfg models.Config) {
+func runAuto(cfg *models.Config) {
 	// 1) SSDP
-	if avtransport.TrySSDP(&cfg) {
-		runWithConfig(&cfg)
+	if avtransport.TrySSDP(cfg) {
+		runWithConfig(cfg)
 		return
 	}
 
 	if cfg.UseCache {
 		// 2) Cache (interactive)
-		if avtransport.TryCache(&cfg) {
-			runWithConfig(&cfg)
+		if avtransport.TryCache(cfg) {
+			runWithConfig(cfg)
 			return
 		}
 	}
 
 	// 3) Probe fallback
-	ok := avtransport.TryProbe(&cfg)
+	ok := avtransport.TryProbe(cfg)
 	if !ok {
 		logger.Fatal("Unable to resolve AVTransport endpoint")
 	}
@@ -78,23 +78,23 @@ func runAuto(cfg models.Config) {
 		return
 	}
 
-	runWithConfig(&cfg)
+	runWithConfig(cfg)
 }
 
-func runManual(cfg models.Config) {
+func runManual(cfg *models.Config) {
 	target := avtransport.Target{
-		ControlURL: utils.ControlURL(&cfg),
-		MediaURL:   utils.MediaURL(&cfg),
+		ControlURL: utils.ControlURL(cfg),
+		MediaURL:   utils.MediaURL(cfg),
 	}
 
 	meta := avtransport.MetadataForVendor(cfg.TVVendor, target)
 	avtransport.Run(target, meta)
 }
 
-func runScan(cfg models.Config) {
+func runScan(cfg *models.Config) {
 	// --- SSDP scan ---
 	if cfg.Discover {
-		if avtransport.TrySSDP(&cfg) {
+		if avtransport.TrySSDP(cfg) {
 			logger.Success("Device discovered via SSDP")
 		} else {
 			logger.Notify("No devices discovered via SSDP")
@@ -109,12 +109,12 @@ func runScan(cfg models.Config) {
 	}
 
 	// --- Single-IP probe ---
-	avtransport.TryProbe(&cfg)
+	avtransport.TryProbe(cfg)
 
 	logger.Success("Mode : Scan , completed")
 }
 
-func runStream(cfg models.Config, stop <-chan struct{}) {
+func runStream(cfg *models.Config, stop <-chan struct{}) {
 	// Implemented in internal/stream_mode.go (next section)
 	stream.StartStreamPlay(cfg, stop)
 }

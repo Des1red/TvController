@@ -58,7 +58,7 @@ func netmaskToUint32(mask net.IPMask) uint32 {
 		uint32(mask[3])
 }
 
-func ScanSubnet(cfg models.Config) {
+func ScanSubnet(cfg *models.Config) {
 	logger.Notify("Running subnet scan")
 	ips, err := expandCIDR(cfg.Subnet)
 	if err != nil {
@@ -70,7 +70,7 @@ func ScanSubnet(cfg models.Config) {
 	for _, ip := range ips {
 		cfg.TIP = ip
 
-		ok, err := probeAVTransport(&cfg)
+		ok, err := probeAVTransport(cfg)
 		if err != nil || !ok {
 			continue
 		}

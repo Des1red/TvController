@@ -21,10 +21,11 @@ type ClientProfile struct {
 }
 
 func ServeStreamGo(
-	cfg models.Config,
+	cfg *models.Config,
 	stop <-chan struct{},
 	streamPath string,
 	mime string,
+	container StreamContainer,
 	source StreamSource,
 ) {
 	cfg.ServerUp = true
@@ -71,10 +72,19 @@ func ServeStreamGo(
 		w.Header().Set("Content-Type", mime)
 
 		// CHANGED: dynamic Accept-Ranges
-		if p.WantsRange {
-			w.Header().Set("Accept-Ranges", "bytes")
-		} else {
+		// Range support depends on container semantics
+		switch container.Key() {
+		case "ts":
+			// MPEG-TS / live streams must be linear
 			w.Header().Set("Accept-Ranges", "none")
+
+		default:
+			// Non-TS containers MAY support Range (future)
+			if p.WantsRange {
+				w.Header().Set("Accept-Ranges", "bytes")
+			} else {
+				w.Header().Set("Accept-Ranges", "none")
+			}
 		}
 
 		if r.Method == http.MethodHead {

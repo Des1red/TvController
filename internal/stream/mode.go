@@ -9,11 +9,11 @@ import (
 	"tvctrl/logger"
 )
 
-func StartStreamPlay(cfg models.Config, stop <-chan struct{}) {
+func StartStreamPlay(cfg *models.Config, stop <-chan struct{}) {
 	start(cfg, stop)
 }
 
-func start(cfg models.Config, stop <-chan struct{}) {
+func start(cfg *models.Config, stop <-chan struct{}) {
 	// 1) Resolve IP used for MediaURL
 	cfg.LIP = utils.LocalIP(cfg.LIP)
 
@@ -43,18 +43,22 @@ func start(cfg models.Config, stop <-chan struct{}) {
 	streamPath := "/stream"
 	// Resolve AVTransport ONCE
 	if cfg.UseCache {
-		if avtransport.TryCache(&cfg) {
+		if avtransport.TryCache(cfg) {
 			goto resolved
 		}
 	}
 
-	if !avtransport.TryProbe(&cfg) {
+	if !avtransport.TryProbe(cfg) {
 		logger.Fatal("Unable to resolve AVTransport endpoint")
 	}
 
 resolved:
 
-	controlURL := utils.ControlURL(&cfg)
+	controlURL := cfg.CachedControlURL
+	if controlURL == "" {
+		controlURL = utils.ControlURL(cfg)
+	}
+
 	if controlURL == "" {
 		logger.Fatal("ControlURL not resolved")
 	}
@@ -68,7 +72,7 @@ resolved:
 	// choose MIME
 	mime := selectMime(container, media)
 	logger.Notify("Using stream MIME: %s", mime)
-	ServeStreamGo(cfg, stop, streamPath, mime, src)
+	ServeStreamGo(cfg, stop, streamPath, mime, container, src)
 	for !cfg.ServerUp {
 		time.Sleep(100 * time.Millisecond)
 	}
