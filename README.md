@@ -144,7 +144,7 @@ It supports automatic discovery, probing fallback, **explicit cache selection**,
  
 - Keeps behavior predictable across vendors
  
-- What streaming mode does NOT do
+ What streaming mode does NOT do
  
 - No screen mirroring
  
