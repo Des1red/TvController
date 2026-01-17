@@ -1,9 +1,10 @@
 package models
 
 type Config struct {
-	Mode      string // "auto" | "manual"
-	ProbeOnly bool
-	Discover  bool
+	Interactive bool
+	Mode        string // "auto" | "manual"
+	ProbeOnly   bool
+	Discover    bool
 
 	SelectCache int
 	AutoCache   bool
@@ -30,6 +31,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
+	Interactive: false,
 	SelectCache: -1,
 	AutoCache:   false,
 	UseCache:    true,

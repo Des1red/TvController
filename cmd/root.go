@@ -8,6 +8,7 @@ import (
 	"tvctrl/internal"
 	"tvctrl/internal/cache"
 	"tvctrl/internal/models"
+	"tvctrl/internal/ui"
 	"tvctrl/internal/utils"
 	"tvctrl/logger"
 )
@@ -20,6 +21,11 @@ func Execute() {
 
 	// FLAG INVERSION
 	cfg.UseCache = !noCache
+
+	// TUI mode
+	if cfg.Interactive {
+		ui.Run(&cfg)
+	}
 
 	// Cache commands exit early
 	if cache.HandleCacheCommands(cfg) {

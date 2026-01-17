@@ -7,6 +7,9 @@ import (
 )
 
 func parseFlags() {
+	//tui startup
+	pflag.BoolVar(&cfg.Interactive, "tui", cfg.Interactive, "Start program as TUI")
+
 	pflag.BoolVar(&cfg.ProbeOnly, "probe-only", cfg.ProbeOnly, "Probe AVTransport only when using mode: auto")
 	pflag.StringVar(&cfg.Mode, "mode", cfg.Mode, "Execution mode (auto/manual/stream/scan)")
 
