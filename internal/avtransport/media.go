@@ -61,11 +61,11 @@ func soapRequestRaw(controlURL, body, soapAction string) (*http.Response, error)
 	return client.Do(req)
 }
 
-func FetchMediaProtocols(controlURL string) (map[string][]string, error) {
+func FetchMediaProtocols(connMgrURL string) (map[string][]string, error) {
 	body := `<u:GetProtocolInfo xmlns:u="urn:schemas-upnp-org:service:ConnectionManager:1"/>`
 
 	resp, err := soapRequestRaw(
-		controlURL,
+		connMgrURL,
 		body,
 		`"urn:schemas-upnp-org:service:ConnectionManager:1#GetProtocolInfo"`,
 	)

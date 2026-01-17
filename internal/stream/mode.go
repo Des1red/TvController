@@ -63,10 +63,14 @@ resolved:
 		logger.Fatal("ControlURL not resolved")
 	}
 
-	// Now fetch protocol info from the SAME ControlURL
-	media, err := avtransport.FetchMediaProtocols(controlURL)
-	if err != nil {
-		logger.Notify("ProtocolInfo fetch failed, using fallback MIME")
+	// Fetch protocol info from ConnectionManager (if available)
+	var media map[string][]string
+	if cfg.CachedConnMgrURL != "" {
+		media, err = avtransport.FetchMediaProtocols(cfg.CachedConnMgrURL)
+	}
+	if media == nil {
+		logger.Notify("ProtocolInfo unavailable, using fallback MIME")
+		media = map[string][]string{}
 	}
 
 	// choose MIME

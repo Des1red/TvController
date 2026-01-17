@@ -24,6 +24,7 @@ type Config struct {
 	LDir      string // directory to serve
 	ServePort string // local HTTP port
 
+	CachedConnMgrURL string
 	CachedControlURL string
 	ServerUp         bool
 }

@@ -26,7 +26,11 @@ func ControlURL(cfg *models.Config) string {
 		path = "/" + path
 	}
 
-	return "http://" + cfg.TIP + ":" + cfg.TPort + path
+	if strings.HasPrefix(cfg.TPath, "http://") || strings.HasPrefix(cfg.TPath, "https://") {
+		return cfg.TPath
+	}
+	return fmt.Sprintf("http://%s:%s%s", cfg.TIP, cfg.TPort, path)
+
 }
 
 func BaseUrl(c *models.Config) string {

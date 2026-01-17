@@ -26,7 +26,7 @@ func parseFlags() {
 	pflag.StringVar(&cfg.TIP, "Tip", cfg.TIP, "TV IP address")
 	pflag.StringVar(&cfg.TPort, "Tport", cfg.TPort, "TV SOAP port")
 	pflag.StringVar(&cfg.TPath, "Tpath", cfg.TPath, "TV SOAP control path")
-	pflag.StringVar(&cfg.TVVendor, "type", cfg.TVVendor, "TV vendor")
+	pflag.StringVar(&cfg.TVVendor, "vendor", cfg.TVVendor, "TV vendor")
 
 	// media
 	pflag.StringVar(&cfg.LFile, "Lf", cfg.LFile, "Local media file")

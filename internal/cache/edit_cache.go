@@ -33,6 +33,11 @@ func StoreInCache(cfg *models.Config, update Device) {
 		dev.ControlURL = update.ControlURL
 	}
 
+	// --- merge ConnectionManager URL ---
+	if dev.ConnMgrURL == "" && update.ConnMgrURL != "" {
+		dev.ConnMgrURL = update.ConnMgrURL
+	}
+
 	// --- merge Vendor ---
 	if dev.Vendor == "" && update.Vendor != "" {
 		dev.Vendor = update.Vendor
@@ -71,6 +76,7 @@ func LoadCachedTV(cfg *models.Config) {
 	cfg.TIP = ip
 	cfg.TVVendor = dev.Vendor
 	cfg.CachedControlURL = dev.ControlURL
+	cfg.CachedConnMgrURL = dev.ConnMgrURL
 
 	logger.Success(
 		"Using cached device [%d]: %s",
@@ -187,14 +193,34 @@ func handleListCache() {
 	}
 
 	logger.Info("\n\nCached AVTransport devices:\n\n")
-	fmt.Printf(" %-15s %-10s %s\n", "IP", "Vendor", "ControlURL")
-	fmt.Println(strings.Repeat("-", 60))
+	fmt.Printf(
+		" %-3s  		%-15s  		%-12s  							%-60s  							%-60s\n",
+		"#", "IP", "Vendor", "ControlURL", "ConnMgrURL",
+	)
+	fmt.Println(strings.Repeat("-", 170))
 
 	keys := sortedCache(store)
 
 	for i, ip := range keys {
 		dev := store[ip]
-		fmt.Printf("[%d] %-15s %-10s %s\n", i, ip, dev.Vendor, dev.ControlURL)
+		fmt.Printf(
+			"[%d]  	%-15s  	   %-12s     			%-60s  					%-60s\n",
+			i,
+			ip,
+			col(dev.Vendor, 12),
+			col(dev.ControlURL, 60),
+			col(dev.ConnMgrURL, 60),
+		)
 	}
 
+}
+
+func col(v string, w int) string {
+	if v == "" {
+		v = "n/a"
+	}
+	if len(v) > w {
+		return v[:w-3] + "..."
+	}
+	return fmt.Sprintf("%-*s", w, v)
 }

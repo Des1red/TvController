@@ -3,8 +3,8 @@ package cache
 type Device struct {
 	Vendor     string `json:"vendor"`
 	ControlURL string `json:"control_url"`
+	ConnMgrURL string `json:"conn_mgr_url,omitempty"`
 
-	// --- enrichment
 	Identity map[string]any      `json:"identity,omitempty"`
 	Actions  map[string]bool     `json:"actions,omitempty"`
 	Media    map[string][]string `json:"media,omitempty"`

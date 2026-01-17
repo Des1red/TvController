@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"tvctrl/internal/models"
@@ -20,6 +21,11 @@ type ClientProfile struct {
 	DidHEAD    bool
 }
 
+var (
+	profiles = make(map[string]*ClientProfile)
+	mu       sync.Mutex
+)
+
 func ServeStreamGo(
 	cfg *models.Config,
 	stop <-chan struct{},
@@ -31,11 +37,11 @@ func ServeStreamGo(
 	cfg.ServerUp = true
 
 	mux := http.NewServeMux()
-	profiles := make(map[string]*ClientProfile)
 
 	mux.HandleFunc(streamPath, func(w http.ResponseWriter, r *http.Request) {
 		clientIP := strings.Split(r.RemoteAddr, ":")[0]
 
+		mu.Lock()
 		p, ok := profiles[clientIP]
 		if !ok {
 			p = &ClientProfile{
@@ -44,9 +50,9 @@ func ServeStreamGo(
 				Headers:   r.Header.Clone(),
 			}
 			profiles[clientIP] = p
-
 			logger.Notify("TV detected: %s (%s)", p.IP, p.UserAgent)
 		}
+		mu.Unlock()
 
 		if r.Method == http.MethodHead {
 			p.DidHEAD = true

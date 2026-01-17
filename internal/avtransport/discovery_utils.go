@@ -49,6 +49,7 @@ func TryCache(cfg *models.Config) bool {
 
 	// Inject directly into playback phase
 	cfg.CachedControlURL = dev.ControlURL
+	cfg.CachedConnMgrURL = dev.ConnMgrURL
 
 	return true
 }
@@ -83,6 +84,9 @@ func TrySSDP(cfg *models.Config) bool {
 	if tv.Vendor != "" {
 		cfg.TVVendor = tv.Vendor
 	}
+	if tv.ConnectionManagerCtrl != "" {
+		cfg.CachedConnMgrURL = tv.ConnectionManagerCtrl
+	}
 
 	caps, err := EnrichCapabilities(
 		tv.AVTransportSCPD,
@@ -100,6 +104,7 @@ func TrySSDP(cfg *models.Config) bool {
 	update := cache.Device{
 		ControlURL: utils.ControlURL(cfg),
 		Vendor:     tv.Vendor,
+		ConnMgrURL: tv.ConnectionManagerCtrl,
 	}
 
 	if err == nil {
