@@ -1,0 +1,39 @@
+UI Update — Interactive TUI Configuration (v2)
+
+A new terminal-based UI (TUI) was added to replace manual flag entry with a structured, interactive configuration flow.
+
+What’s new:
+
+    Mode-based configuration (Auto / Stream / Scan / Manual / Cache)
+
+    Editable fields mapped directly from existing flags
+
+    Keyboard navigation (↑ ↓ Enter Esc)
+
+    Clear separation between mode selection and configuration
+
+    Mode-specific field sets (only relevant options shown)
+
+    Readable, centered layout with consistent styling
+
+UX improvements:
+
+    Mode descriptions shown during selection
+
+    Mode-specific execute labels for clarity
+
+    Confirmation screen before execution
+
+    Conditional greyed-out fields for dependent options
+
+    Transaction-style config editing using a working copy (safe cancel / commit)
+
+    One-time startup animation for visual polish
+
+Design goals:
+
+    Reduce mistakes caused by long flag lists
+
+    Improve clarity without adding complexity
+
+    No changes to execution logic — UI is a thin, safe layer

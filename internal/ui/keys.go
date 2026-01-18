@@ -3,16 +3,73 @@ package ui
 import (
 	"fmt"
 	"os"
-	"renderctl/internal/models"
 	"strconv"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
 )
 
+func handleKeyEvent(
+	ev *tcell.EventKey,
+	screen tcell.Screen,
+	styles UIStyles,
+	ctx *uiContext,
+	state *uiState,
+	selectedMode *int,
+	fields *[]Field,
+	selectedField *int,
+	editMode *bool,
+	editBuffer *string,
+	confirmSelected *int,
+) {
+	// confirm screen is special
+	if *state == stateConfirm {
+		switch ev.Key() {
+
+		case tcell.KeyUp, tcell.KeyDown:
+			*confirmSelected = (*confirmSelected + 1) % 2
+
+		case tcell.KeyEnter:
+			if *confirmSelected == 0 {
+				ctx.commit()
+				*state = stateExit
+			} else {
+				*selectedMode = 0
+				*state = stateModeSelect
+			}
+
+		case tcell.KeyEscape:
+			*selectedMode = 0
+			*state = stateModeSelect
+		}
+		return
+	}
+
+	if *state == stateModeSelect {
+		handleModeSelectKey(
+			ev, ctx, modes,
+			selectedMode, state,
+			fields, selectedField,
+			editMode, editBuffer,
+			screen,
+		)
+		return
+	}
+
+	handleConfigKey(
+		ev, ctx, *fields,
+		selectedField,
+		editMode,
+		editBuffer,
+		state,
+		screen,
+		confirmSelected,
+	)
+}
+
 func handleModeSelectKey(
 	ev *tcell.EventKey,
-	cfg *models.Config,
+	ctx *uiContext,
 	modes []string,
 	selectedMode *int,
 	state *uiState,
@@ -38,9 +95,10 @@ func handleModeSelectKey(
 	case tcell.KeyEnter:
 		selected := strings.ToLower(modes[*selectedMode])
 
-		cfg.Mode = selected
+		ctx.resetWorking()
+		ctx.working.Mode = selected
 
-		*fields = buildFieldsForMode(cfg, cfg.Mode)
+		*fields = buildFieldsForMode(&ctx.working, ctx.working.Mode)
 		*selectedField = 0
 		*editMode = false
 		*editBuffer = ""
@@ -53,13 +111,14 @@ func handleModeSelectKey(
 
 func handleConfigKey(
 	ev *tcell.EventKey,
-	cfg *models.Config,
+	ctx *uiContext,
 	fields []Field,
 	selectedField *int,
 	editMode *bool,
 	editBuffer *string,
 	state *uiState,
 	screen tcell.Screen,
+	confirmSelected *int,
 ) {
 	// hard quit
 	if ev.Key() == tcell.KeyRune && ev.Rune() == 'q' {
@@ -111,7 +170,9 @@ func handleConfigKey(
 
 		// Execute
 		if *selectedField == len(fields) {
-			*state = stateExit
+			*state = stateConfirm
+			*selectedField = 0 // optional safety
+			*confirmSelected = 0
 			return
 		}
 

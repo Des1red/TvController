@@ -26,57 +26,50 @@ func Run(cfg *models.Config) {
 
 	styles := defaultStyles()
 
-	state := stateModeSelect
-	selectedMode := 0
+	// UI context
+	ctx := &uiContext{cfg: cfg}
 
+	state := stateModeSelect
+	confirmSelected := 0
+	selectedMode := 0
 	var fields []Field
 	selectedField := 0
 	editMode := false
 	editBuffer := ""
 
 	for state != stateExit {
-		switch state {
-		case stateModeSelect:
-			renderModeScreen(screen, styles, selectedMode)
-
-		case stateConfig:
-			renderInputScreen(
-				screen,
-				styles,
-				fields,
-				selectedField,
-				editMode,
-				editBuffer,
-			)
-		}
+		renderState(
+			screen,
+			styles,
+			state,
+			selectedMode,
+			fields,
+			selectedField,
+			editMode,
+			editBuffer,
+			ctx,
+			confirmSelected,
+		)
 
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
-
 		case *tcell.EventKey:
-			if state == stateModeSelect {
-				handleModeSelectKey(
-					ev, cfg, modes,
-					&selectedMode, &state,
-					&fields, &selectedField,
-					&editMode, &editBuffer,
-					screen,
-				)
-			} else {
-				handleConfigKey(
-					ev, cfg, fields,
-					&selectedField,
-					&editMode,
-					&editBuffer,
-					&state,
-					screen,
-				)
-			}
+			handleKeyEvent(
+				ev,
+				screen,
+				styles,
+				ctx,
+				&state,
+				&selectedMode,
+				&fields,
+				&selectedField,
+				&editMode,
+				&editBuffer,
+				&confirmSelected,
+			)
 
 		case *tcell.EventResize:
 			screen.Sync()
 		}
 	}
-	screen.Fini()
-	return
 }
