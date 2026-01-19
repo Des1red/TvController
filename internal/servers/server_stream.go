@@ -2,6 +2,7 @@ package servers
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -114,7 +115,7 @@ func ServeStream(
 	})
 
 	srv := &http.Server{
-		Addr:              "0.0.0.0:" + cfg.ServePort,
+		// Addr:              "0.0.0.0:" + cfg.ServePort, // added net Listen below
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -127,13 +128,19 @@ func ServeStream(
 			mime,
 		)
 
-		// ---- SSDP ANNOUNCE (CRITICAL) ----
+		ln, err := net.Listen("tcp", "0.0.0.0:"+cfg.ServePort)
+		if err != nil {
+			logger.Fatal("HTTP stream server listen error: %v", err)
+			return
+		}
+
+		// NOW we are truly listening — safe to announce
 		identity.AnnounceMediaServer(
 			serverUUID,
 			"http://"+cfg.LIP+":"+cfg.ServePort+"/device.xml",
 		)
 
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 			logger.Fatal("HTTP stream server error: %v", err)
 		}
 	}()
