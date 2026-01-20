@@ -154,8 +154,15 @@ func pick[T any](ep *Endpoint, f func(*Endpoint) T) T {
 	}
 	return f(ep)
 }
+func orNA(v string) string {
+	if v == "" {
+		return "n/a"
+	}
+	return v
+}
+func handleCacheDetails(cfg models.Config) {
+	index := cfg.CacheDetails
 
-func handleCacheDetails(index int) {
 	store, err := Load()
 	if err != nil {
 		logger.Fatal("Error: %v", err)
@@ -166,7 +173,7 @@ func handleCacheDetails(index int) {
 		return
 	}
 
-	// sorted IPs (same ordering everywhere)
+	// deterministic IP order
 	keys := make([]string, 0, len(store))
 	for ip := range store {
 		keys = append(keys, ip)
@@ -180,80 +187,138 @@ func handleCacheDetails(index int) {
 	ip := keys[index]
 	cd := store[ip]
 
-	logger.Info("\n===== CACHE DETAILS =====")
-	logger.Result("Index   : %d", index)
-	logger.Result("IP      : %s", ip)
-	logger.Result("Vendor  : %s", col(cd.Vendor, 20))
+	mediaFilter := mediaFilter(cfg)
 
-	// ---- Identity ----
-	if cd.Identity != nil {
-		logger.Info("\nIdentity:")
-		for _, k := range []string{
-			"friendly_name",
-			"manufacturer",
-			"model_name",
-			"model_number",
-			"udn",
-			"presentation",
-		} {
-			if v, ok := cd.Identity[k]; ok {
-				logger.Result(" %-14s: %v", k, v)
-			}
-		}
-	}
+	// ---- ROOT ----
+	fmt.Printf("\n%s (%s)\n", ip, orNA(cd.Vendor))
+	fmt.Println("├── AVTransport")
 
-	// ---- Endpoints ----
-	if len(cd.Endpoints) == 0 {
-		logger.Notify("\nNo AVTransport endpoints stored.")
-		return
-	}
-
-	// deterministic endpoint order
+	// ---- ENDPOINTS ----
 	var urls []string
 	for u := range cd.Endpoints {
 		urls = append(urls, u)
 	}
 	sort.Strings(urls)
 
-	logger.Info("\nAVTransport Endpoints:")
-
 	for i, u := range urls {
-
 		ep := cd.Endpoints[u]
+
+		lastEP := i == len(urls)-1
+		prefix := "│   ├──"
+		child := "│   │   "
+		if lastEP {
+			prefix = "│   └──"
+			child = "│       "
+		}
+
 		playable := len(ep.Actions) > 0
 
-		logger.Info("\n [%d]", i)
-		logger.Result(" Playable   : %v", playable)
-		logger.Result(" ControlURL : %s", ep.ControlURL)
-		logger.Result(" ConnMgrURL : %s", col(ep.ConnMgrURL, 20))
-		logger.Result(" SeenAt     : %s", ep.SeenAt.Format(time.RFC3339))
+		fmt.Printf("%s %s\n", prefix, ep.ControlURL)
+		fmt.Printf("%s├── playable: %v\n", child, playable)
 
-		if len(ep.Actions) > 0 {
-			logger.Info(" Actions:")
-			var acts []string
-			for a := range ep.Actions {
-				acts = append(acts, a)
-			}
-			sort.Strings(acts)
-			for _, a := range acts {
-				logger.Result("  - %s", a)
+		// ---- ACTIONS ----
+		if playable && len(ep.Actions) > 0 {
+			fmt.Printf("%s├── actions: %d\n", child, len(ep.Actions))
+
+			if cfg.Showactions {
+				var acts []string
+				for a := range ep.Actions {
+					acts = append(acts, a)
+				}
+				sort.Strings(acts)
+
+				for i, a := range acts {
+					lastA := i == len(acts)-1 && mediaFilter == nil
+					p := "├──"
+					if lastA {
+						p = "└──"
+					}
+					fmt.Printf("%s│   %s %s\n", child, p, a)
+				}
 			}
 		}
 
-		if len(ep.Media) > 0 {
-			logger.Info(" Media:")
-			var keys []string
-			for k := range ep.Media {
-				keys = append(keys, k)
+		// ---- MEDIA ----
+		if playable && len(ep.Media) > 0 {
+			fmt.Printf("%s├── media: %d types\n", child, len(ep.Media))
+
+			typeMap := map[string][]string{}
+			for mime := range ep.Media {
+				group := strings.SplitN(mime, "/", 2)[0]
+				typeMap[group] = append(typeMap[group], mime)
 			}
-			sort.Strings(keys)
-			for _, k := range keys {
-				logger.Result("  - %s: %v", k, ep.Media[k])
+
+			var groups []string
+			for g := range typeMap {
+				groups = append(groups, g)
+			}
+			sort.Strings(groups)
+
+			for _, g := range groups {
+				expand :=
+					mediaFilter != nil &&
+						(mediaFilter["*"] || mediaFilter[g])
+
+				if !expand {
+					fmt.Printf(
+						"%s│   ├── %s (%d)\n",
+						child,
+						g,
+						len(typeMap[g]),
+					)
+					continue
+				}
+
+				fmt.Printf(
+					"%s│   ├── %s (%d)\n",
+					child,
+					g,
+					len(typeMap[g]),
+				)
+
+				sort.Strings(typeMap[g])
+				for i, m := range typeMap[g] {
+					p := "├──"
+					if i == len(typeMap[g])-1 {
+						p = "└──"
+					}
+					fmt.Printf(
+						"%s│   │   %s %s\n",
+						child,
+						p,
+						m,
+					)
+				}
 			}
 		}
+
+		// ---- SEEN ----
+		fmt.Printf(
+			"%s└── seen: %s\n",
+			child,
+			ep.SeenAt.Format("2006-01-02 15:04"),
+		)
 	}
 
-	logger.Info("\n=========================\n")
+	fmt.Println()
+}
+
+func mediaFilter(cfg models.Config) map[string]bool {
+	if cfg.ShowMediaAll {
+		return map[string]bool{"*": true}
+	}
+	if cfg.ShowMedia == "" {
+		return nil
+	}
+
+	m := map[string]bool{}
+	for _, v := range strings.Split(cfg.ShowMedia, ",") {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			m[v] = true
+		}
+	}
+	return m
 }
 
 /*
@@ -276,7 +341,7 @@ func HandleCacheCommands(cfg models.Config) bool {
 	}
 
 	if cfg.CacheDetails >= 0 {
-		handleCacheDetails(cfg.CacheDetails)
+		handleCacheDetails(cfg)
 		return true
 	}
 

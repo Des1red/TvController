@@ -14,6 +14,9 @@ type Config struct {
 	UseCache     bool
 	ForgetCache  string // "", "all", or IP
 	ListCache    bool
+	ShowMedia    string
+	ShowMediaAll bool
+	Showactions  bool
 
 	DeepSearch  bool
 	Subnet      string
@@ -35,15 +38,21 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	SSDPTimeout:  60 * time.Second,
+	// Ssdp
+	SSDPTimeout: 60 * time.Second,
+	Discover:    false,
+	// Cache
 	Interactive:  false,
 	SelectCache:  -1,
 	CacheDetails: -1,
+	ShowMedia:    "",
+	ShowMediaAll: false,
+	Showactions:  false,
 	AutoCache:    false,
 	UseCache:     true,
-	ProbeOnly:    false,
-	Discover:     false,
-	Mode:         "auto",
-	ServePort:    "8000",
-	LDir:         "./directory",
+
+	ProbeOnly: false,
+	Mode:      "auto",
+	ServePort: "8000",
+	LDir:      "./directory",
 }

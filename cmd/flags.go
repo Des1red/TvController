@@ -20,6 +20,10 @@ func parseFlags() {
 	pflag.StringVar(&cfg.ForgetCache, "forget-cache", cfg.ForgetCache, "Forget cache (interactive | IP | all)")
 	pflag.IntVar(&cfg.SelectCache, "select-cache", -1, "Select cached device by index")
 	pflag.IntVar(&cfg.CacheDetails, "details-cache", -1, "List cached device with details")
+	pflag.StringVar(&cfg.ShowMedia, "show-media", cfg.ShowMedia, "Show media details (audio,video,image or comma-separated)")
+	pflag.BoolVar(&cfg.ShowMediaAll, "show-media-all", cfg.ShowMediaAll, "Show all media information from cached devices")
+	pflag.BoolVar(&cfg.Showactions, "show-actions", cfg.Showactions, "Show supported actions from cached devices")
+
 	// scan
 	pflag.StringVar(&cfg.Subnet, "subnet", cfg.Subnet, "Subnet to scan (e.g. 192.168.1.0/24)")
 	pflag.BoolVar(&cfg.DeepSearch, "deep-search", cfg.DeepSearch, "Use a bigger list when probing for device endpoints")
