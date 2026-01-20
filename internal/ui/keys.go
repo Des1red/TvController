@@ -159,18 +159,38 @@ func handleConfigKey(
 			if f.Type == FieldString {
 				*f.String = *editBuffer
 			} else if f.Type == FieldInt {
+				trim := strings.TrimSpace(*editBuffer)
+
+				// ---- Select cache index ----
 				if f.Label == "Select cache index" {
-					// empty input → reset cache
-					if strings.TrimSpace(*editBuffer) == "" {
+					// empty input → reset cache selection
+					if trim == "" {
 						clearCachedSelection(ctx)
 						*editMode = false
 						*editBuffer = ""
 						return
 					}
 
-					if v, err := strconv.Atoi(*editBuffer); err == nil {
+					if v, err := strconv.Atoi(trim); err == nil {
 						*f.Int = v
 						openCachePopup(ctx, v, state)
+					}
+				}
+
+				// ---- Details cache ----
+				if f.Label == "Details cache" {
+					// empty input → unset (-1)
+					if trim == "" {
+						*f.Int = -1
+						*editMode = false
+						*editBuffer = ""
+						return
+					}
+
+					if v, err := strconv.Atoi(trim); err == nil {
+						*f.Int = v
+						// Details cache selected => disable List cache
+						ctx.working.ListCache = false
 					}
 				}
 			} else if f.Type == FieldDuration {
@@ -264,12 +284,19 @@ func handleConfigKey(
 		switch f.Type {
 		case FieldBool:
 			*f.Bool = !*f.Bool
+			// cache: List cache ON => clear Details cache path
+			if f.Label == "List cache" && *f.Bool {
+				ctx.working.CacheDetails = -1
+				ctx.working.ShowMedia = ""
+				ctx.working.ShowMediaAll = false
+				ctx.working.Showactions = false
+			}
 		case FieldString:
 			*editMode = true
 			*editBuffer = *f.String
 		case FieldInt:
 			*editMode = true
-			if f.Label == "Select cache index" && *f.Int < 0 {
+			if (f.Label == "Select cache index" || f.Label == "Details cache") && *f.Int < 0 {
 				*editBuffer = ""
 			} else {
 				*editBuffer = fmt.Sprintf("%d", *f.Int)
@@ -322,6 +349,10 @@ func isExecuteDisabled(ctx *uiContext) bool {
 	mode := ctx.working.Mode
 
 	switch mode {
+	case "cache":
+		// exactly one must be selected (XOR)
+		return (ctx.working.ListCache && ctx.working.CacheDetails >= 0) ||
+			(!ctx.working.ListCache && ctx.working.CacheDetails < 0)
 
 	case "scan":
 		// If SSDP is disabled, user must provide a TV IP

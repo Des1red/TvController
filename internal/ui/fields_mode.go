@@ -75,6 +75,10 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 		return []Field{
 			{Label: "List cache", Type: FieldBool, Bool: &cfg.ListCache},
 			{Label: "Forget cache", Type: FieldString, String: &cfg.ForgetCache},
+			{Label: "Details cache", Type: FieldInt, Int: &cfg.CacheDetails},
+			{Label: "Show media", Type: FieldString, String: &cfg.ShowMedia},
+			{Label: "Show media all", Type: FieldBool, Bool: &cfg.ShowMediaAll},
+			{Label: "Show actions", Type: FieldBool, Bool: &cfg.Showactions},
 		}
 	}
 
@@ -83,13 +87,20 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 
 func isFieldDisabled(f Field, ctx *uiContext) bool {
 	switch f.Label {
+	// cache mutual exclusion
+	case "List cache":
+		return ctx.working.CacheDetails >= 0
 
+	case "Details cache":
+		return ctx.working.ListCache
 	// cache logic
 	case "Auto cache", "Select cache index":
 		return !ctx.working.UseCache
-
+	case "Show media", "Show media all", "Show actions":
+		return ctx.working.CacheDetails < 0
 	case "TV Port", "TV Path", "TV Vendor", "TV IP":
 		return ctx.working.SelectCache >= 0
+
 	// SSDP timeout only makes sense if SSDP is enabled
 	case "SSDP timeout (seconds)":
 		return !ctx.working.Discover

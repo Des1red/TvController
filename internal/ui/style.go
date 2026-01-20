@@ -142,6 +142,14 @@ func confirmSubtitleForMode(mode string) string {
 
 func executeDisableReason(ctx *uiContext) string {
 	switch ctx.working.Mode {
+	case "cache":
+		if ctx.working.ListCache && ctx.working.CacheDetails >= 0 {
+			return "Select either List cache or Details cache, not both"
+		}
+		if !ctx.working.ListCache && ctx.working.CacheDetails < 0 {
+			return "Either List cache or Details cache must be selected"
+		}
+
 	case "scan":
 		// SSDP disabled → TV IP required
 		if !ctx.working.Discover && ctx.working.TIP == "" {

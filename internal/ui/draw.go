@@ -67,7 +67,7 @@ func drawFieldRow(
 		value = *f.String
 
 	case FieldInt:
-		if f.Label == "Select cache index" && *f.Int < 0 {
+		if (f.Label == "Select cache index" || f.Label == "Details cache") && *f.Int < 0 {
 			value = ""
 		} else {
 			value = fmt.Sprintf("%d", *f.Int)

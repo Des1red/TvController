@@ -335,8 +335,8 @@ func renderConfirmScreen(
 				break
 			}
 
-			// Select cache index: 0 is VALID
-			if f.Label == "Select cache index" {
+			// Select cache index AND Details cache: -1 means "not set"
+			if f.Label == "Select cache index" || f.Label == "Details cache" {
 				if *f.Int >= 0 {
 					value = fmt.Sprintf("%d", *f.Int)
 				} else {
