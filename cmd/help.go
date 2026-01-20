@@ -34,16 +34,16 @@ func printHelp() {
 	printFlag(w, "--list-cache", "", "			          List cached devices")
 	printFlag(w, "--forget-cache", "string", "	 Forget cache (interactive | IP | all)")
 	printFlag(w, "--select-cache", "int", "		    Select cached device by index")
-	printFlag(w, "--details-cache", "int", "List cached device with details")
-	printFlag(w, "--show-actions", "", "		Show supported actions from cached devices")
-	printFlag(w, "--show-media", "", "		  Show media information from cached devices")
-	printFlag(w, "--show-media-all", "", "	  Show all media information from cached devices")
+	printFlag(w, "--details-cache", "int", "		   List cached device with details")
+	printFlag(w, "--show-actions", "", "		    Show supported actions from cached devices")
+	printFlag(w, "--show-media", "", "		    Show media information from cached devices")
+	printFlag(w, "--show-media-all", "", "	   Show all media information from cached devices")
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Scan:")
-	printFlag(w, "--subnet", "  string", "   Subnet to scan (e.g. 192.168.1.0/24)")
-	printFlag(w, "--deep-search", "", "	Extended endpoint probing")
-	printFlag(w, "--ssdp", "", "		         Enable SSDP discovery")
+	printFlag(w, "--subnet", "  string", "               Subnet to scan (e.g. 192.168.1.0/24)")
+	printFlag(w, "--deep-search", "", "	             Extended endpoint probing")
+	printFlag(w, "--ssdp", "", "		                      Enable SSDP discovery")
 	printFlag(w, "--ssdp-timeout", "duration", "   SSDP discovery timeout duration")
 
 	fmt.Fprintln(w)
@@ -59,6 +59,11 @@ func printHelp() {
 	printFlag(w, "--Lip		   ", "string", "	 Local IP")
 	printFlag(w, "--Ldir		  ", "string", "  Local directory")
 	printFlag(w, "--LPort		", "string", "Local port")
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Installer:")
+	printFlag(w, "--install", "", "Run installer (build binary and optional dependencies)")
+	printFlag(w, "--dry-run", "", "Show installer actions without executing")
 
 	w.Flush()
 }
