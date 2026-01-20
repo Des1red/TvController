@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"renderctl/internal/models"
 
 	"github.com/spf13/pflag"
 )
@@ -60,4 +61,37 @@ func parseFlags() {
 	if *version {
 		printVersionAndExit()
 	}
+}
+
+func badFlagUse() (bool, string) {
+	def := models.DefaultConfig
+
+	// scan mode restrictions
+	if cfg.Mode == "scan" && cfg.ProbeOnly {
+		return true, "flag --probe-only is not supported in scan mode"
+	}
+	if cfg.Mode == "scan" && !cfg.Discover && cfg.TIP == "" && cfg.Subnet == "" {
+		return true, "scan mode requires a target IP or subnet when SSDP discovery is disabled"
+	}
+
+	// cache mode conflicts
+	if cfg.ListCache && cfg.CacheDetails >= 0 {
+		return true, "flags --list-cache and --details-cache cannot be used together"
+	}
+
+	// cached target overrides
+	if cfg.SelectCache != def.SelectCache &&
+		(cfg.TIP != def.TIP ||
+			cfg.TPort != def.TPort ||
+			cfg.TPath != def.TPath ||
+			cfg.TVVendor != def.TVVendor) {
+		return true, "cannot override TV connection parameters when a cached target is selected"
+	}
+
+	// SSDP flag dependency
+	if !cfg.Discover && cfg.SSDPTimeout != def.SSDPTimeout {
+		return true, "flag --ssdp-timeout requires SSDP discovery to be enabled (--ssdp)"
+	}
+
+	return false, ""
 }

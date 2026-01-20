@@ -5,8 +5,9 @@ import "time"
 type Config struct {
 	Interactive bool
 	Mode        string // "auto" | "manual"
+
+
 	ProbeOnly   bool
-	Discover    bool
 
 	SelectCache  int
 	CacheDetails int
@@ -18,6 +19,7 @@ type Config struct {
 	ShowMediaAll bool
 	Showactions  bool
 
+	Discover    bool
 	DeepSearch  bool
 	Subnet      string
 	SSDPTimeout time.Duration

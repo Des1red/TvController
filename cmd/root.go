@@ -20,7 +20,10 @@ var noCache bool
 
 func Execute() {
 	parseFlags()
-
+	if bad, msg := badFlagUse(); bad {
+		logger.Fatal(msg)
+		os.Exit(0)
+	}
 	// FLAG INVERSION
 	cfg.UseCache = !noCache
 
