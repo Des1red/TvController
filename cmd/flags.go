@@ -3,11 +3,16 @@ package cmd
 import (
 	"os"
 	"renderctl/internal/models"
+	"renderctl/requirements"
 
 	"github.com/spf13/pflag"
 )
 
 func parseFlags() {
+	//installation
+	pflag.BoolVar(&requirements.Install, "install", false, "Run installer (build binary and optional dependencies)")
+	pflag.BoolVar(&requirements.DryRun, "dry-run", false, "Show installer actions without executing")
+
 	//tui startup
 	pflag.BoolVar(&cfg.Interactive, "tui", cfg.Interactive, "Start program as TUI")
 

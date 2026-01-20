@@ -13,6 +13,7 @@ import (
 	"renderctl/internal/ui"
 	"renderctl/internal/utils"
 	"renderctl/logger"
+	"renderctl/requirements"
 )
 
 var cfg = models.DefaultConfig
@@ -20,6 +21,14 @@ var noCache bool
 
 func Execute() {
 	parseFlags()
+	// ---- INSTALLER (early exit) ----
+	if requirements.Install {
+		if err := requirements.RunInstaller(); err != nil {
+			logger.Fatal("%v", err)
+		}
+		os.Exit(0)
+	}
+
 	if bad, msg := badFlagUse(); bad {
 		logger.Fatal(msg)
 		os.Exit(0)
