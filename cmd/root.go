@@ -2,14 +2,10 @@ package cmd
 
 import (
 	"os"
-	"os/signal"
-	"time"
 
 	"renderctl/internal"
 	"renderctl/internal/cache"
 	"renderctl/internal/models"
-	"renderctl/internal/servers"
-	"renderctl/internal/stream"
 	"renderctl/internal/ui"
 	"renderctl/internal/utils"
 	"renderctl/logger"
@@ -71,44 +67,4 @@ func handleInteraction() {
 	if (cfg.Mode == "scan" && cfg.Discover) || (cfg.Mode != "scan" && !cfg.ProbeOnly) {
 		cfg.LIP = utils.LocalIP(cfg.LIP)
 	}
-}
-
-func preRun() (chan struct{}, bool) {
-	stop := make(chan struct{})
-	serverRunning := false
-
-	// ---- PRE-RUN LOGIC ----
-	mode := utils.NormalizeMode(cfg.Mode)
-	if mode != "scan" && !cfg.ProbeOnly {
-		if cfg.LFile == "" {
-			logger.Error("Missing -Lf (media file)")
-		}
-
-		if mode != "stream" {
-			if err := utils.ValidateFile(cfg.LFile); err != nil {
-				logger.Error("Invalid file: %v", err)
-			}
-		}
-
-		if mode != "stream" {
-			servers.InitDefaultServer(cfg, stop)
-		} else {
-			stream.InitStreamServer(&cfg, stop)
-		}
-
-		time.Sleep(500 * time.Millisecond)
-		serverRunning = true
-	}
-
-	return stop, serverRunning
-}
-
-func waitForShutdown(stop chan struct{}) {
-	logger.Status("renderctl running — press Ctrl+C to exit")
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-	<-sig
-
-	close(stop)
 }
