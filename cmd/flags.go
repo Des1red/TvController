@@ -9,6 +9,9 @@ import (
 )
 
 func parseFlags() {
+	pflag.Usage = func() {
+		printHelp()
+	}
 	//installation
 	pflag.BoolVar(&requirements.Install, "install", false, "Run installer (build binary and optional dependencies)")
 	pflag.BoolVar(&requirements.DryRun, "dry-run", false, "Show installer actions without executing")

@@ -2,82 +2,112 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 )
 
-func printHelp() {
-	w := tabwriter.NewWriter(
-		os.Stdout,
-		0,   // min width
-		0,   // tab width
-		2,   // padding
-		' ', // pad char
-		0,   // flags
-	)
-
-	fmt.Fprintln(w, "renderctl - Simple TV controller using AVTransport")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "\trenderctl [flags]")
-	fmt.Fprintln(w)
-
-	fmt.Fprintln(w, "Execution:")
-	printFlag(w, "--tui", "", "					    Start program as TUI")
-	printFlag(w, "--probe-only", "", " Probe AVTransport only")
-	printFlag(w, "--mode", "string", "Execution mode (auto/manual/scan/stream)")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Cache:")
-	printFlag(w, "--auto-cache", "", "			      Skip cache save confirmation")
-	printFlag(w, "--no-cache", "", "			        Disable cache usage")
-	printFlag(w, "--list-cache", "", "			          List cached devices")
-	printFlag(w, "--forget-cache", "string", "	 Forget cache (interactive | IP | all)")
-	printFlag(w, "--select-cache", "int", "		    Select cached device by index")
-	printFlag(w, "--details-cache", "int", "		   List cached device with details")
-	printFlag(w, "--show-actions", "", "		    Show supported actions from cached devices")
-	printFlag(w, "--show-media", "", "		    Show media information from cached devices")
-	printFlag(w, "--show-media-all", "", "	   Show all media information from cached devices")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Scan:")
-	printFlag(w, "--subnet", "  string", "               Subnet to scan (e.g. 192.168.1.0/24)")
-	printFlag(w, "--deep-search", "", "	             Extended endpoint probing")
-	printFlag(w, "--ssdp", "", "		                      Enable SSDP discovery")
-	printFlag(w, "--ssdp-timeout", "duration", "   SSDP discovery timeout duration")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "TV:")
-	printFlag(w, "--Tip         ", "string", "	   TV IP")
-	printFlag(w, "--Tport    ", "string", "  SOAP port")
-	printFlag(w, "--Tpath   ", "string", " SOAP path")
-	printFlag(w, "--type      ", "string", "	 Vendor")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Media:")
-	printFlag(w, "--Lf		     ", "string", "	   Local media file or url (url is stream explicit)")
-	printFlag(w, "--Lip		   ", "string", "	 Local IP")
-	printFlag(w, "--Ldir		  ", "string", "  Local directory")
-	printFlag(w, "--LPort		", "string", "Local port")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Output:")
-	printFlag(w, "--verbose		     ", "", "	Enables verbose output")
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Installer:")
-	printFlag(w, "--install", "", "   Run installer (build binary and optional dependencies)")
-	printFlag(w, "--dry-run", "", "Show installer actions without executing")
-
-	w.Flush()
+type helpFlag struct {
+	name string
+	arg  string
+	desc string
 }
 
-func printFlag(w *tabwriter.Writer, name, arg, desc string) {
-	left := name
-	if arg != "" {
-		left = name + " " + arg
+func calcWidths(flags []helpFlag) (flagW, argW int) {
+	for _, f := range flags {
+		if len(f.name) > flagW {
+			flagW = len(f.name)
+		}
+		if len(f.arg) > argW {
+			argW = len(f.arg)
+		}
 	}
+	return
+}
 
-	// EXACTLY two columns, separated by ONE tab
-	fmt.Fprintf(w, "\t%s\t%s\n", left, desc)
+func printFlags(flags []helpFlag) {
+	flagW, argW := calcWidths(flags)
+	for _, f := range flags {
+		fmt.Printf(
+			"  %-*s  %-*s  %s\n",
+			flagW,
+			f.name,
+			argW,
+			f.arg,
+			f.desc,
+		)
+	}
+}
+
+func printHelp() {
+	fmt.Println("renderctl - Simple TV controller using AVTransport")
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  renderctl [flags]")
+	fmt.Println()
+
+	// ─── Execution ───────────────────────────────────────────
+	fmt.Println("Execution:")
+	printFlags([]helpFlag{
+		{"--tui", "", "Start program as TUI"},
+		{"--probe-only", "", "Probe AVTransport only"},
+		{"--mode", "string", "Execution mode (auto/manual/scan/stream)"},
+	})
+	fmt.Println()
+
+	// ─── Cache ───────────────────────────────────────────────
+	fmt.Println("Cache:")
+	printFlags([]helpFlag{
+		{"--auto-cache", "", "Skip cache save confirmation"},
+		{"--no-cache", "", "Disable cache usage"},
+		{"--list-cache", "", "List cached devices"},
+		{"--forget-cache", "string", "Forget cache (interactive | IP | all)"},
+		{"--select-cache", "int", "Select cached device by index"},
+		{"--details-cache", "int", "List cached device with details"},
+		{"--show-actions", "", "Show supported actions from cached devices"},
+		{"--show-media", "", "Show media information from cached devices"},
+		{"--show-media-all", "", "Show all media information from cached devices"},
+	})
+	fmt.Println()
+
+	// ─── Scan ────────────────────────────────────────────────
+	fmt.Println("Scan:")
+	printFlags([]helpFlag{
+		{"--subnet", "string", "Subnet to scan (e.g. 192.168.1.0/24)"},
+		{"--deep-search", "", "Extended endpoint probing"},
+		{"--ssdp", "", "Enable SSDP discovery"},
+		{"--ssdp-timeout", "duration", "SSDP discovery timeout duration"},
+	})
+	fmt.Println()
+
+	// ─── TV ──────────────────────────────────────────────────
+	fmt.Println("TV:")
+	printFlags([]helpFlag{
+		{"--Tip", "string", "TV IP"},
+		{"--Tport", "string", "SOAP port"},
+		{"--Tpath", "string", "SOAP path"},
+		{"--type", "string", "Vendor"},
+	})
+	fmt.Println()
+
+	// ─── Media ───────────────────────────────────────────────
+	fmt.Println("Media:")
+	printFlags([]helpFlag{
+		{"--Lf", "string", "Local media file or url (url is stream explicit)"},
+		{"--Lip", "string", "Local IP"},
+		{"--Ldir", "string", "Local directory"},
+		{"--LPort", "string", "Local port"},
+	})
+	fmt.Println()
+
+	// ─── Output ──────────────────────────────────────────────
+	fmt.Println("Output:")
+	printFlags([]helpFlag{
+		{"--verbose", "", "Enables verbose output"},
+	})
+	fmt.Println()
+
+	// ─── Installer ───────────────────────────────────────────
+	fmt.Println("Installer:")
+	printFlags([]helpFlag{
+		{"--install", "", "Run installer (build binary and optional dependencies)"},
+		{"--dry-run", "", "Show installer actions without executing"},
+	})
 }
