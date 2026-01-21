@@ -364,7 +364,7 @@ func isExecuteDisabled(ctx *uiContext) bool {
 
 	case "auto":
 		// required
-		if ctx.working.LIP == "" || ctx.working.TIP == "" {
+		if ctx.working.LIP == "" || (ctx.working.TIP == "" && !ctx.working.Discover) {
 			return true
 		}
 
