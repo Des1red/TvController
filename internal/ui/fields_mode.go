@@ -15,6 +15,7 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 			{Label: "Local IP", Type: FieldString, String: &cfg.LIP},
 			{Label: "Auto cache", Type: FieldBool, Bool: &cfg.AutoCache},
 			{Label: "Use cache", Type: FieldBool, Bool: &cfg.UseCache},
+			{Label: "Report file name", Type: FieldString, String: &cfg.ReportFileName},
 		}
 
 	case "auto":
@@ -36,6 +37,7 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 			{Label: "Auto cache", Type: FieldBool, Bool: &cfg.AutoCache},
 			{Label: "Use cache", Type: FieldBool, Bool: &cfg.UseCache},
 			{Label: "Select cache index", Type: FieldInt, Int: &cfg.SelectCache},
+			{Label: "Report file name", Type: FieldString, String: &cfg.ReportFileName},
 		}
 
 	case "stream":
@@ -52,6 +54,7 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 			{Label: "Auto cache", Type: FieldBool, Bool: &cfg.AutoCache},
 			{Label: "Use cache", Type: FieldBool, Bool: &cfg.UseCache},
 			{Label: "Select cache index", Type: FieldInt, Int: &cfg.SelectCache},
+			{Label: "Report file name", Type: FieldString, String: &cfg.ReportFileName},
 		}
 
 	case "manual":
@@ -69,6 +72,7 @@ func buildFieldsForMode(cfg *models.Config, mode string) []Field {
 			{Label: "Auto cache", Type: FieldBool, Bool: &cfg.AutoCache},
 			{Label: "Use cache", Type: FieldBool, Bool: &cfg.UseCache},
 			{Label: "Select cache index", Type: FieldInt, Int: &cfg.SelectCache},
+			{Label: "Report file name", Type: FieldString, String: &cfg.ReportFileName},
 		}
 
 	case "cache":

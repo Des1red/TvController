@@ -44,6 +44,10 @@ func handleFlagsAndLogging() {
 	if bad, msg := badFlagUse(); bad {
 		logger.Error(msg)
 	}
+	// TUI mode
+	if cfg.Interactive {
+		ui.Run(&cfg)
+	}
 	// Set verbose + filename(if any)
 	logger.SetVerbose(cfg.Verbose)
 
@@ -53,11 +57,6 @@ func handleFlagsAndLogging() {
 	}
 	// FLAG INVERSION
 	cfg.UseCache = !noCache
-
-	// TUI mode
-	if cfg.Interactive {
-		ui.Run(&cfg)
-	}
 
 	// Cache commands exit early
 	if cache.HandleCacheCommands(cfg) {
