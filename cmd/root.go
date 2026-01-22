@@ -27,6 +27,7 @@ func Execute() {
 	if serverRunning {
 		waitForShutdown(stop)
 	}
+	logger.CreateReport()
 }
 
 func handleInstaller() {
@@ -43,8 +44,13 @@ func handleFlagsAndLogging() {
 	if bad, msg := badFlagUse(); bad {
 		logger.Error(msg)
 	}
-	// Set verbose
+	// Set verbose + filename(if any)
 	logger.SetVerbose(cfg.Verbose)
+
+	if cfg.ReportFileName != "" {
+		cfg.ReportFile = true
+		logger.SetFileName(cfg.ReportFileName)
+	}
 	// FLAG INVERSION
 	cfg.UseCache = !noCache
 

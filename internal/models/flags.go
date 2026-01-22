@@ -5,9 +5,10 @@ import "time"
 type Config struct {
 	Interactive bool
 	Mode        string // "auto" | "manual"
-	Verbose     bool
 
-	ProbeOnly bool
+	Verbose        bool
+	ReportFile     bool
+	ReportFileName string
 
 	SelectCache  int
 	CacheDetails int
@@ -19,6 +20,7 @@ type Config struct {
 	ShowMediaAll bool
 	Showactions  bool
 
+	ProbeOnly   bool
 	Discover    bool
 	DeepSearch  bool
 	Subnet      string
@@ -53,9 +55,10 @@ var DefaultConfig = Config{
 	AutoCache:    false,
 	UseCache:     true,
 
-	ProbeOnly: false,
-	Mode:      "auto",
-	ServePort: "8000",
-	LDir:      "./directory",
-	Verbose:   false,
+	ProbeOnly:  false,
+	Mode:       "auto",
+	ServePort:  "8000",
+	LDir:       "./directory",
+	Verbose:    false,
+	ReportFile: false,
 }

@@ -101,7 +101,9 @@ func printHelp() {
 	fmt.Println("Output:")
 	printFlags([]helpFlag{
 		{"--verbose", "", "Enables verbose output"},
+		{"--report-file", "string", "Report output file name"},
 	})
+
 	fmt.Println()
 
 	// ─── Installer ───────────────────────────────────────────

@@ -166,7 +166,7 @@ func handleCacheDetails(cfg models.Config) {
 
 	store, err := Load()
 	if err != nil {
-		logger.Error("Error: %v", err)
+		logger.Error("%v", err)
 	}
 
 	if len(store) == 0 {
@@ -357,7 +357,7 @@ func HandleCacheCommands(cfg models.Config) bool {
 func handleListCache() {
 	store, err := Load()
 	if err != nil {
-		logger.Error("Error: %v", err)
+		logger.Error("%v", err)
 	}
 
 	if len(store) == 0 {

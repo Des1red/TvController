@@ -33,23 +33,32 @@ func Prompt(format string, a ...any) {
 
 // Runtime state / banner
 func Status(format string, a ...any) {
-	fmt.Printf(gray+"[STATUS] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(gray + "[STATUS] " + msg + reset + "\n")
+	report("Status: " + msg)
 }
 
 // Fatal error (red)
 func Error(format string, a ...any) {
-	fmt.Fprintf(os.Stderr, red+"[ERROR] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Fprint(os.Stderr, red+"[ERROR] "+msg+reset+"\n")
+	report("Error: " + msg)
+	CreateReport()
 	os.Exit(0)
 }
 
 // Task finished (neutral)
 func Done(format string, a ...any) {
-	fmt.Printf(cyan+"[DONE] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(cyan + "[DONE] " + msg + reset + "\n")
+	report("Done: " + msg)
 }
 
 // Success (blue neon)
 func Success(format string, a ...any) {
-	fmt.Printf(blue+"[SUCCESS] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(blue + "[SUCCESS] " + msg + reset + "\n")
+	report("Success: " + msg)
 }
 
 // In progress / running (green)
@@ -57,15 +66,19 @@ func Info(format string, a ...any) {
 	if !verbose {
 		return
 	}
-	fmt.Printf(green+"[INFO] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(green + "[INFO] " + msg + reset + "\n")
 }
 
 // Final result / summary (purple)
 func Result(format string, a ...any) {
-	fmt.Printf(purple+"[RESULT] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(purple + "[RESULT] " + msg + reset + "\n")
+	report("Result: " + msg)
 }
 
 // Notification / warning (yellow)
 func Notify(format string, a ...any) {
-	fmt.Printf(yellow+"[NOTICE] "+format+reset+"\n", a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Printf(yellow + "[NOTICE] " + msg + reset + "\n")
 }

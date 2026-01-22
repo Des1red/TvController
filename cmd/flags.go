@@ -58,7 +58,7 @@ func parseFlags() {
 
 	// output
 	pflag.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "Enables verbose output")
-
+	pflag.StringVar(&cfg.ReportFileName, "report-file", "", "Report output file name")
 	// meta
 	version := pflag.BoolP("version", "V", false, "Show version")
 	help := pflag.BoolP("help", "h", false, "Show help")

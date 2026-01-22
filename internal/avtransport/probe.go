@@ -58,7 +58,7 @@ var bigList = []string{
 func TryProbe(cfg *models.Config) bool {
 	ok, err := probeAVTransport(cfg)
 	if err != nil {
-		logger.Error("Error: %v", err)
+		logger.Error("%v", err)
 	}
 	return ok
 }
